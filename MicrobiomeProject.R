@@ -18,7 +18,21 @@ microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', strings
 #Writing quality for final report, evaluated in terms of conformance to process outline, level of detail, and correctness.
 
 #----------------- Data Cleaning
-#This dataset was pre-curated from the original Science article
+#This dataset was pre-curated from the original Science article so it contains so missing data
+#requiring imputation.
+
+library(psych)
+table(microbiome$Diet)
+# 0   1    2   3   4   5 
+#389 269   1   1   9   6
+
+#   Diet	
+#0	LFPP: low fat, high-plant polysaccharide diet
+#1	Western: high-fat, high-sugar Western diet
+#2	CARBR
+#3	FATR
+#4	Suckling
+#5	Human
 
 #----------------- K-Nearest Neighbors (KNN)
 library(class) #package for KNN model
