@@ -17,6 +17,9 @@ microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', strings
 #Appropriate use of functions to reduce code complexity and redundancy
 #Writing quality for final report, evaluated in terms of conformance to process outline, level of detail, and correctness.
 
+#----------------- Data Cleaning
+#This dataset was pre-curated from the original Science article
+
 #----------------- K-Nearest Neighbors (KNN)
 library(class) #package for KNN model
 biome.mat <- as.data.frame(data.matrix(microbiome)) #make matrix a data frame
