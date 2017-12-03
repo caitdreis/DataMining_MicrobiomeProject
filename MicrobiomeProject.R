@@ -17,7 +17,7 @@ microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', strings
 #Appropriate use of functions to reduce code complexity and redundancy
 #Writing quality for final report, evaluated in terms of conformance to process outline, level of detail, and correctness.
 
-#----------------- Data Cleaning
+#----------------- Data Cleaning ####
 #This dataset was pre-curated from the original Science article so it contains so missing data
 #requiring imputation.
 
@@ -34,7 +34,7 @@ table(microbiome$Diet)
 #4	Suckling
 #5	Human
 
-#----------------- K-Nearest Neighbors (KNN)
+#----------------- K-Nearest Neighbors (KNN) ######
 library(class) #package for KNN model
 biome.mat <- as.data.frame(data.matrix(microbiome)) #make matrix a data frame
 
@@ -82,7 +82,7 @@ pred.mat10 <- table("Predictions" = knn.pred10, Actual = cl[test]); pred.mat10
 (accuracy <- sum(diag(pred.mat5))/length(test) * 100) #94.66667%
 (accuracy <- sum(diag(pred.mat10))/length(test) * 100) #93.48148%
 
-#----------------- K-Means Clustering
+#----------------- K-Means Clustering #####
 set.seed(1)
 diet.cluster <- kmeans(microbiome[,6:94], 6)
 diet.cluster
@@ -127,4 +127,25 @@ test = microbiome[, 6:94] #make a test set with OTU columns
 test.m = as.matrix(test)
 centroid <- test.m[sample(nrow(test.m), 10),] #take the centroids
 results <- cluster.kmeans(test.m, centroid, eu.dist, 10); results
+
+
+#----------------- Tree Based Methods ######
+#----------------- Random Forest
+library( randomForest)
+
+#Cross validation of testing data with testing data entered in for test
+set.seed(17)
+train = sample(1:nrow(microbiome), nrow(microbiome) * .75)
+test <- microbiome[-train, ]
+train <- microbiome[train, ]
+
+
+# went by the rule of ???p variables when building a random forest of classification trees
+# sqrt(6701) = 81.86
+rf.biome= randomForest(Diet~.,data=train, mtry=80, importance =TRUE)
+yhat.rf = predict(rf.biome,newdata=test)
+mean((yhat.rf-test)^2)
+#[1] 0.3987529
+importance (rf.biome)
+# nothing is showing as significantly important
 
