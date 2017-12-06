@@ -316,31 +316,6 @@ diet.cluster$cluster <- as.factor(diet.cluster$cluster)
 #Recently performed studies in rodents have indicated that Akkermansia muciniphila in 
 #the intestinal tract may reduce obesity, diabetes, and inflammation.
 
-#----------------- K-Means Clustering from Scratch
-#need to make a function for euclidean distance from scratch
-eu.dist <- function(x1, x2) {
-  dist.m <- matrix(NA, nrow=dim(x1)[1], ncol=dim(x2)[1])
-  for(i in 1:nrow(x2)) { dist.m[,i] <- sqrt(rowSums(t(t(x1)-x2[i,])^2))}
-  dist.m
-}
-
-cluster.kmeans <- function(x, centroids, distance, num) {
-  cluster.list <- vector(num, mode="list"); center.list <- vector(num, mode="list")
-  for(i in 1:num) { #start the loop through the number of specified iterations from num
-    dist <- distance(x, centroids) #take the distance between the point and the calculated centroids
-    clusters <- apply(dist, 1, which.min) #apply the which.min function to the distance
-    centroids <- apply(x, 2, tapply, clusters, mean) #apply the mean function to create the clusters
-    cluster.list[[i]] <- clusters #fill the list with the calculated clusters
-    center.list[[i]] <- centroids } 
-  list(clusters=cluster.list, centroids=center.list) 
-}
-
-test = microbiome[, 6:94] #make a test set with OTU columns 
-test.m = as.matrix(test)
-centroid <- test.m[sample(nrow(test.m), 10),] #take the centroids
-results <- cluster.kmeans(test.m, centroid, eu.dist, 10); results
-
-
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
 library(randomForest)
