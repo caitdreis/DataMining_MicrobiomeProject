@@ -313,8 +313,6 @@ library(ggplot2)
 diet.cluster$cluster <- as.factor(diet.cluster$cluster)
 #ggplot(microbiome, color = diet.cluster$cluster)) + geom_point()
 
-#Recently performed studies in rodents have indicated that Akkermansia muciniphila in 
-#the intestinal tract may reduce obesity, diabetes, and inflammation.
 
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
