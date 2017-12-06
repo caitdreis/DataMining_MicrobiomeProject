@@ -144,7 +144,23 @@ k <- sample(nrow(microbiome[,6:94]), 6)
 R <- renyi(microbiome[,6:94][k,])
 plot(R) #can visualize these six sites, labels sites chosen
 
-#----------------- Further Descriptive and ANOVA Exploration with Featured Variable 
+#also make new column for Renyi index 
+microbiome$Renyi <- NULL
+microbiome$Renyi <- renyi(microbiome[,6:94], scales = 32)
+summary(microbiome$Renyi)
+#Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#0.0000  0.1088  0.5273  0.9812  0.9235  4.0060 
+
+#Is there a significant difference between these indexes?
+comp.index <- aov(microbiome$ShannonIndex ~ microbiome$Renyi, data=microbiome)
+plot(comp.index)
+summary(comp.index)
+#                 Df Sum Sq Mean Sq F value Pr(>F)    
+#microbiome$Renyi   1 1147.1    1147   36057 <2e-16 ***
+#Residuals        591   18.8       0  
+
+#----------------- Further Descriptive and ANOVA Exploration with Featured Variables 
+#----------------- Shannon Index
 describeBy(microbiome$ShannonIndex, microbiome$Diet)
 #Descriptive statistics by group 
 #group: 0
@@ -155,14 +171,14 @@ describeBy(microbiome$ShannonIndex, microbiome$Diet)
 #vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 #X1    1 243 1.14 1.34   0.71    0.89 0.75   0 4.36  4.36 1.63     1.41 0.09
 
-#significance testing with ANOVA
+#significance testing with ANOVA using diet
 fit <- aov(microbiome$ShannonIndex ~ microbiome$Diet, data=microbiome)
 plot(fit)
 summary(fit)
 #               Df Sum Sq Mean Sq F value Pr(>F)
 #microbiome$Diet   1    1.7   1.712   0.869  0.352
 #Residuals       591 1164.2   1.970    
-#No significant on the 
+#No significant of diet on the Shannon Index
 
 #posthoc TukeyHSD (Honestly Significant Differences)
 TukeyHSD(fit) #where fit comes from aov()
@@ -187,6 +203,50 @@ summary(fit.sex)
 TukeyHSD(fit.sex) 
 #         diff        lwr       upr     p adj
 #1-0 0.006854582 -0.4008207 0.4145299 0.9736681
+
+#----------------- Renyi Index
+describeBy(microbiome$Renyi, microbiome$Diet)
+#Descriptive statistics by group 
+#group: 0
+#vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
+#X1    1 350 1.03 1.34   0.56    0.79 0.57   0 3.99  3.99 1.52     0.64 0.07
+#---------------------------------------------------------------- 
+#group: 1
+#vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
+#X1    1 243 0.92 1.24   0.53    0.66 0.62   0 4.01  4.01 1.75     1.61 0.08
+
+#significance testing with ANOVA using diet
+fit.ren <- aov(microbiome$Renyi ~ microbiome$Diet, data=microbiome)
+plot(fit.ren)
+summary(fit.ren)
+#               Df Sum Sq Mean Sq F value Pr(>F)
+#microbiome$Diet   1    1.7   1.738   1.026  0.312
+#Residuals       591 1001.4   1.694    
+#No significant on the effect of diet on the Renyi diversity index
+
+#posthoc TukeyHSD (Honestly Significant Differences)
+TukeyHSD(fit.ren) #where fit comes from aov()
+#Tukey multiple comparisons of means
+#95% family-wise confidence level
+#Fit: aov(formula = microbiome$Renyi ~ microbiome$Diet, data = microbiome)
+#$`microbiome$Diet`
+#       diff        lwr       upr     p adj
+#1-0 -0.1100728 -0.3235387 0.1033931 0.3116079
+#Tukey's posthoc testing tells us that there is truly no significance in diet's
+#effect on the mean Renyi diversity index measure.
+
+#significance testing with ANOVA using sex
+fit.sex.ren <- aov(microbiome$Renyi ~ microbiome$Sex, data=microbiome)
+plot(fit.sex.ren)
+summary(fit.sex.ren)
+#               Df Sum Sq Mean Sq F value Pr(>F)
+#microbiome$Sex   1    0.1  0.0709   0.042  0.838
+#Residuals      591 1003.0  1.6972  
+
+#posthoc TukeyHSD 
+TukeyHSD(fit.sex.ren) 
+#         diff        lwr       upr     p adj
+#1-0 0.03936279 -0.3387679 0.4174935 0.838074
 
 #----------------- Multinomial Logistic Regression ######
 
