@@ -490,3 +490,7 @@ boost.biome
 #A gradient boosted model with bernoulli loss function.
 #5000 iterations were performed.
 #There were 99 predictors of which 0 had non-zero influence
+
+par(mfrow=c(1,2))
+plot(boost.biome ,i="rm")
+plot(boost.biome ,i=" lstat")
