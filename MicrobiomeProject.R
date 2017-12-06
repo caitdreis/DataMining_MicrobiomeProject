@@ -6,6 +6,7 @@ library(tidyverse) # Load the core tidyverse packages: ggplot2, tibble,
 install.packages("vegan") 
 library(vegan) #calculation of diversity metrics
 library(psych) #descriptive statistics
+library(class) #package for KNN model
 
 #----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
@@ -254,7 +255,6 @@ TukeyHSD(fit.sex.ren)
 
 
 #----------------- K-Nearest Neighbors (KNN) ######
-library(class) #package for KNN model
 biome.mat <- microbiome #make new dataframe to use for KNN only
 
 #Cross validation of testing data with testing data entered in for test
