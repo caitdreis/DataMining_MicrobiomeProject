@@ -1,5 +1,7 @@
 #Microbiome Project
 
+#----------------- Set-up #####
+
 #----------------- Packages
 library(tidyverse) # Load the core tidyverse packages: ggplot2, tibble, 
 # tidyr, readr, purrr, and dplyr
@@ -18,7 +20,7 @@ setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
 microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', stringsAsFactors = FALSE)
 #View(microbiome)
 
-#----------------- Grading Criteria
+#----------------- Grading Criteria #####
 #Data exploration
 #Data cleaning (missing values, outliers, etc.)
 #Rationale for the selected statistical modeling methods
