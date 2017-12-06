@@ -15,28 +15,117 @@ microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', strings
 #Appropriate model selection approach (train/test, cross-validation, etc.)
 #Thoroughly documented code (R comments)
 #Appropriate use of functions to reduce code complexity and redundancy
-#Writing quality for final report, evaluated in terms of conformance to process outline, level of detail, and correctness.
+#Writing quality for final report, evaluated in terms of conformance to process outline, level of 
+#detail, and correctness.
 
-#----------------- Data Cleaning ####
-#This dataset was pre-curated from the original Science article so it contains so missing data
-#requiring imputation.
-
+#----------------- Data Exploration & Cleaning ####
+#This dataset was pre-curated from the original Science article and is thus relatively clean to begin with
 library(psych)
+
+nrow(microbiome) #675 observations
+
+sum(is.na(microbiome)) #No missing data requiring imputation
+
+colnames(microbiome[1:5])
+#"Diet" "Source" "Donor" "CollectionMet" "Sex"  
+#Beyond this, all column names are OTU groups
+
+table(microbiome$Donor)
+#0   1   2   3   4   5   6 
+#313  64   6 151  92  46   3 
+
+#   Donor	
+# 0 - HMouseLFPP -- mice
+# 1 - CONVR
+# 2 - Human
+# 3 - Fresh -- mice
+# 4 - Frozen -- mice
+# 5 - HMouseWestern -- mice
+# 6 - CONVD
+
+#We will be using only non-human (mouse) donors for our analysis
+microbiome <- subset(microbiome, Donor == 0 | Donor == 3 | Donor == 4 | Donor == 5)
+
+nrow(microbiome) #602 observations
+
+#Further explore the distribution of these variables
 table(microbiome$Diet)
-# 0   1    2   3   4   5 
-#389 269   1   1   9   6
+# 0   1   4 
+# 350 243 9 
 
 #   Diet	
 #0	LFPP: low fat, high-plant polysaccharide diet
 #1	Western: high-fat, high-sugar Western diet
-#2	CARBR
-#3	FATR
 #4	Suckling
-#5	Human
+
+#Remove all rows with suckling diets (want to compare only high and low fat diets)
+microbiome <- subset(microbiome, Diet == 0 | Diet == 1)
+
+nrow(microbiome) #593 -- FINAL NUMBER OF ROWS
+
+#We will be using only Diet, Source, Sex, and OTU groups going forward
+
+microbiome <- microbiome[,c(1,2,5:100)]
+
+#Check for class types of each non-OTU column
+class((microbiome[,1])) #integer
+class((microbiome[,2])) #integer
+class((microbiome[,3])) #integer
+
+#All of these should be factors
+microbiome[,1] <- as.factor(microbiome[,1])
+microbiome[,2] <- as.factor(microbiome[,2])
+microbiome[,3] <- as.factor(microbiome[,3])
+
+#Double check for correct conversion
+class((microbiome[,1])) #factor - good
+
+table(microbiome$Sex)
+#  0   1 
+# 543  50  -- Uneven distribution between males and females (see below for reference)
+
+#Sex
+#0 - Male
+#1 - Female
+
+plot(Diet~Sex, data=microbiome)
+#Females appear to be more unevenly split between diets (favoring the low fat diet)
+
+#   Diet	
+#0	LFPP: low fat, high-plant polysaccharide diet
+#1	Western: high-fat, high-sugar Western diet
+
+table(microbiome$Source)
+#  0   1   2   3   4   5   6   7   8   9  10  11  12 
+# 13  13  15  10 444  10  12  12   9  13   9   7  26
+
+plot(Diet~Source, data=microbiome)
+#11 is interesting, as it shows that samples from the stomach are classified as high fat only
+#This is likely coincidence
+
+#Sources
+# 0 - Cecum1
+# 1 - Cecum2
+# 2 - Colon1
+# 3 - Colon2
+# 4 - Feces
+# 5 - SI1
+# 6 - SI13
+# 7 - SI15
+# 8 - SI2
+# 9 - SI5
+# 10 - SI9
+# 11 - Stomach
+# 12 - Cecum
+
+#----------------- Multinomial Logistic Regression ######
+
+
+
 
 #----------------- K-Nearest Neighbors (KNN) ######
 library(class) #package for KNN model
-biome.mat <- as.data.frame(data.matrix(microbiome)) #make matrix a data frame
+biome.mat <- microbiome #make new dataframe to use for KNN only
 
 #Cross validation of testing data with testing data entered in for test
 train <- sample(nrow(biome.mat), ceiling(nrow(biome.mat) * .50))
@@ -52,7 +141,7 @@ knn.pred10 <- knn(biome.mat[train, ], biome.mat[test, ], cl[train], k=10)
 #create a prediction table to understand how classes of sentiment values are being defined
 pred.mat1 <- table("Predictions" = knn.pred1, Actual = cl[test]); pred.mat1
 #               Actual
-#Predictions   0   1   2   3   4   5
+#Predictions       0   1   2   3   4   5
 #              0 389   2   0   0   0   0
 #              1   0 267   0   0   0   0
 #              3   0   0   1   1   0   0
@@ -61,7 +150,7 @@ pred.mat1 <- table("Predictions" = knn.pred1, Actual = cl[test]); pred.mat1
 
 pred.mat5 <- table("Predictions" = knn.pred5, Actual = cl[test]); pred.mat5
 #               Actual
-#Predictions   0   1   2   3   4   5
+#Predictions       0   1   2   3   4   5
 #              0 370   0   0   0   0   0
 #              1  19 269   1   1   0   0
 #              3   0   0   0   0   0   0
@@ -70,7 +159,7 @@ pred.mat5 <- table("Predictions" = knn.pred5, Actual = cl[test]); pred.mat5
 
 pred.mat10 <- table("Predictions" = knn.pred10, Actual = cl[test]); pred.mat10
 #               Actual
-#Predictions   0   1   2   3   4   5
+#Predictions       0   1   2   3   4   5
 #              0 358   0   0   0   0   0
 #              1  31 269   1   1   0   0
 #              3   0   0   0   0   0   0
@@ -89,12 +178,12 @@ diet.cluster
 
 table(diet.cluster$cluster, microbiome$Diet)
 #    0   1   2   3   4   5
-#1   2   6   0   0   0   0
-#2  61  10   0   0   0   0
-#3 321 247   1   1   9   6
-#4   3   0   0   0   0   0
-#5   2   4   0   0   0   0
-#6   0   2   0   0   0   0
+#0   2   6   0   0   0   0
+#1  61  10   0   0   0   0
+#2 321 247   1   1   9   6
+#3   3   0   0   0   0   0
+#4   2   4   0   0   0   0
+#5   0   2   0   0   0   0
 
 #visualize clusters with ggplot2
 library(ggplot2)
@@ -131,7 +220,7 @@ results <- cluster.kmeans(test.m, centroid, eu.dist, 10); results
 
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
-library( randomForest)
+library(randomForest)
 
 #Cross validation of testing data with testing data entered in for test
 set.seed(17)
@@ -148,4 +237,6 @@ mean((yhat.rf-test)^2)
 #[1] 0.3987529
 importance (rf.biome)
 # nothing is showing as significantly important
+
+
 
