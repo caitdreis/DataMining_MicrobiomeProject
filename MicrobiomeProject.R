@@ -261,45 +261,38 @@ biome.mat <- microbiome #make new dataframe to use for KNN only
 train <- sample(nrow(biome.mat), ceiling(nrow(biome.mat) * .50))
 test <- (1:nrow(biome.mat))
 
-cl <- biome.mat[, "Diet"] #define the classifier variable of sentiment
+cl <- biome.mat[, "Diet"] #define the classifier variable of diet
+modeldata <- biome.mat[,!colnames(biome.mat) %in% "Diet"]
 
 #create model with training data, test data, and training set classifier
-knn.pred1 <- knn(biome.mat[train, ], biome.mat[test, ], cl[train])
-knn.pred5 <- knn(biome.mat[train, ], biome.mat[test, ], cl[train], k=5)
-knn.pred10 <- knn(biome.mat[train, ], biome.mat[test, ], cl[train], k=10)
+knn.pred1 <- knn(modeldata[train, ], modeldata[test, ], cl[train])
+knn.pred5 <- knn(modeldata[train, ], modeldata[test, ], cl[train], k=5)
+knn.pred10 <- knn(modeldata[train, ], modeldata[test, ], cl[train], k=10)
 
 #create a prediction table to understand how classes of sentiment values are being defined
 pred.mat1 <- table("Predictions" = knn.pred1, Actual = cl[test]); pred.mat1
-#               Actual
-#Predictions       0   1   2   3   4   5
-#              0 389   2   0   0   0   0
-#              1   0 267   0   0   0   0
-#              3   0   0   1   1   0   0
-#              4   0   0   0   0   9   0
-#              5   0   0   0   0   0   6
+#             Actual
+#Predictions   0   1
+#           0 301  60
+#           1  49 183
 
 pred.mat5 <- table("Predictions" = knn.pred5, Actual = cl[test]); pred.mat5
-#               Actual
-#Predictions       0   1   2   3   4   5
-#              0 370   0   0   0   0   0
-#              1  19 269   1   1   0   0
-#              3   0   0   0   0   0   0
-#              4   0   0   0   0   9   0
-#              5   0   0   0   0   0   6
+#             Actual
+#Predictions   0   1
+#           0 299 127
+#           1  51 116
 
 pred.mat10 <- table("Predictions" = knn.pred10, Actual = cl[test]); pred.mat10
 #               Actual
-#Predictions       0   1   2   3   4   5
-#              0 358   0   0   0   0   0
-#              1  31 269   1   1   0   0
-#              3   0   0   0   0   0   0
-#              4   0   0   0   0   5   5
-#              5   0   0   0   0   4   1
+#Predictions   0   1
+#           0 295 131
+#           1  55 112
 
 #assess accuracy of model prediction
-(accuracy <- sum(diag(pred.mat1))/length(test) * 100) #97.33333%
-(accuracy <- sum(diag(pred.mat5))/length(test) * 100) #94.66667%
-(accuracy <- sum(diag(pred.mat10))/length(test) * 100) #93.48148%
+(accuracy <- sum(diag(pred.mat1))/length(test) * 100) #81.61889%
+(accuracy <- sum(diag(pred.mat5))/length(test) * 100) #69.98314%
+(accuracy <- sum(diag(pred.mat10))/length(test) * 100) #68.63406%
+
 
 #----------------- K-Means Clustering #####
 set.seed(1)
