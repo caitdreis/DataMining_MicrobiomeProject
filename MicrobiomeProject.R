@@ -252,74 +252,7 @@ TukeyHSD(fit.sex.ren)
 #         diff        lwr       upr     p adj
 #1-0 0.038679 -0.3460048 0.4233628 0.8435246
 
-#----------------- Multinomial Logistic Regression ######
-
-
-
-
-#----------------- K-Nearest Neighbors (KNN) ######
-biome.mat <- microbiome #make new dataframe to use for KNN only
-
-#Cross validation of testing data with testing data entered in for test
-train <- sample(nrow(biome.mat), ceiling(nrow(biome.mat) * .50))
-test <- (1:nrow(biome.mat))
-
-cl <- biome.mat[, "Diet"] #define the classifier variable of diet
-modeldata <- biome.mat[,!colnames(biome.mat) %in% "Diet"]
-
-#create model with training data, test data, and training set classifier
-knn.pred1 <- knn(modeldata[train, ], modeldata[test, ], cl[train])
-knn.pred5 <- knn(modeldata[train, ], modeldata[test, ], cl[train], k=5)
-knn.pred10 <- knn(modeldata[train, ], modeldata[test, ], cl[train], k=10)
-
-#create a prediction table to understand how classes of sentiment values are being defined
-pred.mat1 <- table("Predictions" = knn.pred1, Actual = cl[test]); pred.mat1
-#             Actual
-#Predictions   0   1
-#           0 301  60
-#           1  49 183
-
-pred.mat5 <- table("Predictions" = knn.pred5, Actual = cl[test]); pred.mat5
-#             Actual
-#Predictions   0   1
-#           0 299 127
-#           1  51 116
-
-pred.mat10 <- table("Predictions" = knn.pred10, Actual = cl[test]); pred.mat10
-#               Actual
-#Predictions   0   1
-#           0 295 131
-#           1  55 112
-
-#assess accuracy of model prediction
-(accuracy <- sum(diag(pred.mat1))/length(test) * 100) #81.61889%
-(accuracy <- sum(diag(pred.mat5))/length(test) * 100) #69.98314%
-(accuracy <- sum(diag(pred.mat10))/length(test) * 100) #68.63406%
-
-
-#----------------- K-Means Clustering #####
-set.seed(1)
-diet.cluster <- kmeans(microbiome[,4:98], 6)
-diet.cluster
-
-table(diet.cluster$cluster, microbiome$Diet)
-#    0   1   2   3   4   5
-#0   2   6   0   0   0   0
-#1  61  10   0   0   0   0
-#2 321 247   1   1   9   6
-#3   3   0   0   0   0   0
-#4   2   4   0   0   0   0
-#5   0   2   0   0   0   0
-
-#visualize clusters with ggplot2
-library(ggplot2)
-diet.cluster$cluster <- as.factor(diet.cluster$cluster)
-#ggplot(microbiome, color = diet.cluster$cluster)) + geom_point()
-
-
-#----------------- Tree Based Methods ######
-#----------------- Random Forest
-library(randomForest)
+#----------------- Training and Testing Sets ######
 
 #Cross validation of testing data with testing data entered in for test
 set.seed(17)
@@ -327,6 +260,61 @@ train = sample(1:nrow(microbiome), nrow(microbiome) * .75)
 test <- microbiome[-train, ]
 train <- microbiome[train, ]
 
+#----------------- Multinomial Logistic Regression ######
+
+
+
+
+#----------------- K-Nearest Neighbors (KNN) ######
+
+#Remove Diet column for KNN testing and training sets
+training <- train[,!colnames(train) %in% "Diet"]
+testing <- test[,!colnames(test) %in% "Diet"]
+
+#create model with training data, test data, and training set classifier
+knn.pred1 <- knn(training, testing, train$Diet)
+knn.pred5 <- knn(training, testing, train$Diet, k=5)
+knn.pred10 <- knn(training, testing, train$Diet, k=10)
+
+#create a prediction table to understand how classes of sentiment values are being defined
+pred.mat1 <- table("Predictions" = knn.pred1, Actual = test$Diet); pred.mat1
+#             Actual
+# Predictions  0  1
+#           0 70 27
+#           1 17 35
+
+pred.mat5 <- table("Predictions" = knn.pred5, Actual = test$Diet); pred.mat5
+#             Actual
+# Predictions  0  1
+#           0 71 36
+#           1 16 26
+
+pred.mat10 <- table("Predictions" = knn.pred10, Actual = test$Diet); pred.mat10
+#              Actual
+# Predictions  0  1
+#           0 71 38
+#           1 16 24
+
+#assess accuracy of model prediction
+(accuracy <- sum(diag(pred.mat1))/nrow(test) * 100) #70.4698%
+(accuracy <- sum(diag(pred.mat5))/nrow(test) * 100) #65.10067%
+(accuracy <- sum(diag(pred.mat10))/nrow(test) * 100) #63.75839%
+
+
+#----------------- K-Means Clustering #####
+set.seed(1)
+diet.cluster <- kmeans(microbiome[,4:98],2)
+
+table(diet.cluster$cluster, microbiome$Diet)
+#      0   1
+# 1  349 239
+# 2    1   4
+
+#This does not look promising. Kmeans is likely not going to be helpful in creating a prediction model.
+
+#----------------- Tree Based Methods ######
+#----------------- Random Forest
+library(randomForest)
 
 # went by the rule of ???p variables when building a random forest of classification trees
 # sqrt(6701) = 81.86
