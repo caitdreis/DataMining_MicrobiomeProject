@@ -265,10 +265,13 @@ train <- microbiome[train, c(1:98)]
 
 microbiome <- microbiome[, c(1:98)]
 
-#----------------- Multinomial Logistic Regression ######
+#----------------- Basic Multinomial Logistic Regression ######
 
+#Create a model with all possible predictors
 model <- glm(Diet~.,family=binomial(link='logit'),data=train)
 summary(model) #Every variable is significant...
+
+#ANOVA 
 anova(model, test="Chisq")
 #A large p-value here indicates that the model without the variable explains 
 #more or less the same amount of variation.
@@ -384,7 +387,7 @@ fitted.results <- ifelse(fitted.results > 0.5,1,0)
 
 misClasificError <- mean(fitted.results != test$Diet)
 print(paste('Accuracy',1-misClasificError))
-#"Accuracy 0.751677852348993"
+#Accuracy 0.751677852348993
 
 p <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
 p
@@ -395,6 +398,159 @@ plot(prf)
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7410085
+
+
+#----------------- Stepwise Multinomial Logistic Regression ######
+
+model.null = glm(Diet ~ 1, data=train, family = binomial(link="logit"))
+
+step(model.null,
+     scope = list(upper=model),
+     direction="both",
+     test="Chisq",
+     data=train)
+
+#Call:  glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
+# OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 + 
+#   OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 + 
+#   OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 + 
+#   OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 + 
+#   OTU43 + OTU24, family = binomial(link = "logit"), data = train)
+# 
+# Degrees of Freedom: 443 Total (i.e. Null);  393 Residual
+# Null Deviance:	    600.3 
+# Residual Deviance: 170.5 	AIC: 272.5
+
+#Step model with 39 predictors (fewer than half of the full model's predictors)
+step.model <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
+      OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
+        OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
+        OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
+        OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
+        OTU43 + OTU24, family = binomial(link = "logit"), data = train)
+
+summary(step.model) 
+# Coefficients:
+#   Estimate Std. Error z value Pr(>|z|)    
+# (Intercept) -5.378e-01  2.525e+00  -0.213 0.831297    
+# OTU41        1.209e+04  2.745e+03   4.404 1.06e-05 ***
+# Source1     -1.852e+00  1.953e+00  -0.948 0.343167    
+# Source2      3.956e-02  1.734e+00   0.023 0.981795    
+# Source3     -3.047e+00  1.968e+00  -1.548 0.121583    
+# Source4     -8.161e+00  1.646e+00  -4.958 7.14e-07 ***
+# Source5     -5.117e+00  1.931e+00  -2.650 0.008049 ** 
+# Source6     -1.654e+00  1.808e+00  -0.915 0.360086    
+# Source7     -1.199e+00  2.099e+00  -0.571 0.567870    
+# Source8     -3.932e+00  1.835e+00  -2.143 0.032092 *  
+# Source9     -3.031e+00  1.740e+00  -1.742 0.081569 .  
+# Source10    -5.685e-01  2.094e+00  -0.271 0.786010    
+# Source11     2.244e+01  1.072e+05   0.000 0.999833    
+# Source12    -1.172e+01  2.961e+00  -3.958 7.55e-05 ***
+# OTU77        1.251e+03  3.376e+02   3.707 0.000210 ***
+# OTU9        -3.743e+03  7.977e+02  -4.692 2.70e-06 ***
+# OTU54        1.053e+10  8.131e+09   1.295 0.195317    
+# OTU71        5.974e+04  6.837e+06   0.009 0.993029    
+# OTU88        1.201e+04  2.835e+03   4.238 2.25e-05 ***
+# OTU25        4.876e+09  6.775e+09   0.720 0.471718    
+# OTU18        5.134e+10  1.018e+10   5.043 4.59e-07 ***
+# OTU74       -2.008e+10  8.236e+09  -2.438 0.014749 *  
+# OTU1        -3.064e+10  9.198e+09  -3.332 0.000863 ***
+# OTU10       -3.911e+04  1.047e+07  -0.004 0.997018    
+# OTU86        6.309e+08  7.754e+09   0.081 0.935153    
+# OTU85        6.257e+02  1.835e+02   3.409 0.000651 ***
+# OTU59        5.432e+03  2.140e+03   2.539 0.011126 *  
+# OTU35       -4.905e+04  5.146e+06  -0.010 0.992395    
+# OTU89        1.798e+10  8.087e+09   2.223 0.026220 *  
+# OTU58       -3.050e+09  9.560e+08  -3.190 0.001423 ** 
+# OTU44        2.745e+10  8.604e+09   3.190 0.001423 ** 
+# OTU51        1.125e+10  8.008e+09   1.405 0.160108    
+# OTU22        1.885e+10  8.483e+09   2.222 0.026303 *  
+# OTU80       -1.723e+10  8.292e+09  -2.078 0.037695 *  
+# OTU73        2.671e+10  8.565e+09   3.119 0.001816 ** 
+# OTU87        2.929e+09  8.316e+09   0.352 0.724667    
+# OTU7        -2.197e+10  8.160e+09  -2.693 0.007081 ** 
+# OTU26       -3.203e+10  9.625e+09  -3.328 0.000876 ***
+# OTU31        1.081e+04  4.654e+03   2.323 0.020201 *  
+# OTU75       -1.920e+10  7.862e+09  -2.442 0.014588 *  
+# OTU4         2.147e+10  7.719e+09   2.781 0.005417 ** 
+# OTU42        5.417e+03  2.578e+03   2.101 0.035601 *  
+# OTU83       -1.373e+04  6.638e+03  -2.069 0.038563 *  
+# OTU0        -1.151e+10  8.096e+09  -1.422 0.155000    
+# OTU8         2.610e+03  1.085e+03   2.406 0.016143 *  
+# OTU40        1.549e+10  8.002e+09   1.936 0.052841 .  
+# OTU70        1.705e+10  8.031e+09   2.123 0.033786 *  
+# OTU30        1.449e+10  7.912e+09   1.832 0.066954 .  
+# OTU39        1.613e+10  8.523e+09   1.892 0.058495 .  
+# OTU43        2.304e+03  1.293e+03   1.782 0.074741 .  
+# OTU24       -1.221e+10  7.732e+09  -1.580 0.114185    
+
+
+#ANOVA 
+anova(step.model, test="Chisq")
+
+#       Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+# NULL                     443     600.28              
+# OTU41   1   98.712       442     501.57 < 2.2e-16 ***
+# Source 12   81.245       430     420.33 2.388e-12 ***
+# OTU77   1   29.529       429     390.80 5.510e-08 ***
+# OTU9    1   22.053       428     368.75 2.653e-06 ***
+# OTU54   1   18.562       427     350.18 1.645e-05 ***
+# OTU71   1   15.394       426     334.79 8.725e-05 ***
+# OTU88   1   11.435       425     323.35 0.0007208 ***
+# OTU25   1   10.817       424     312.54 0.0010055 ** 
+# OTU18   1   12.477       423     300.06 0.0004119 ***
+# OTU74   1    8.713       422     291.35 0.0031603 ** 
+# OTU1    1    6.807       421     284.54 0.0090789 ** 
+# OTU10   1    7.369       420     277.17 0.0066359 ** 
+# OTU86   1    5.843       419     271.33 0.0156420 *  
+# OTU85   1    5.156       418     266.17 0.0231625 *  
+# OTU59   1    5.730       417     260.44 0.0166820 *  
+# OTU35   1    4.469       416     255.97 0.0345116 *  
+# OTU89   1    4.987       415     250.99 0.0255455 *  
+# OTU58   1    3.642       414     247.34 0.0563481 .  
+# OTU44   1    2.949       413     244.40 0.0859259 .  
+# OTU51   1    4.597       412     239.80 0.0320361 *  
+# OTU22   1    3.568       411     236.23 0.0588862 .  
+# OTU80   1    5.263       410     230.97 0.0217838 *  
+# OTU73   1    4.462       409     226.51 0.0346651 *  
+# OTU87   1    4.251       408     222.25 0.0392235 *  
+# OTU7    1    3.272       407     218.98 0.0704789 .  
+# OTU26   1    6.924       406     212.06 0.0085040 ** 
+# OTU31   1    4.097       405     207.96 0.0429509 *  
+# OTU75   1    3.551       404     204.41 0.0595241 .  
+# OTU4    1    3.689       403     200.72 0.0547698 .  
+# OTU42   1    2.990       402     197.73 0.0837558 .  
+# OTU83   1    3.279       401     194.45 0.0701671 .  
+# OTU0    1    3.209       400     191.24 0.0732154 .  
+# OTU8    1    3.196       399     188.05 0.0738122 .  
+# OTU40   1    3.582       398     184.46 0.0584185 .  
+# OTU70   1    3.470       397     181.00 0.0625068 .  
+# OTU30   1    1.974       396     179.02 0.1600272    
+# OTU39   1    3.656       395     175.37 0.0558664 .  
+# OTU43   1    2.275       394     173.09 0.1314678    
+# OTU24   1    2.593       393     170.50 0.1073404    
+
+pR2(step.model)
+#      llh      llhNull           G2        McFadden      r2ML         r2CU 
+# -85.2486643 -300.1416326  429.7859366    0.7159719    0.6201528    0.836603
+
+fitted.results <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+misClasificError <- mean(fitted.results != test$Diet)
+print(paste('Accuracy',1-misClasificError))
+#Accuracy 0.74496644295302 - Comparable to the model with all predictors
+
+p <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
+p
+pr <- prediction(p, test$Diet)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc #0.7875417 -- Better!
+
 
 #----------------- K-Nearest Neighbors (KNN) ######
 
