@@ -604,14 +604,49 @@ table(diet.cluster$cluster, microbiome$Diet)
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
 
-# went by the rule of ???p variables when building a random forest of classification trees
+library(randomForest)
+
+# went by the rule of sqrt(p variables) when building a random forest of classification trees
 # sqrt(6701) = 81.86
 rf.biome= randomForest(Diet~.,data=train, mtry=80, importance =TRUE)
-yhat.rf = predict(rf.biome,newdata=test)
-mean((yhat.rf-test)^2)
-#[1] 0.3987529
+rf.biome
+#No. of variables tried at each split: 80
+#OOB estimate of  error rate: 16.89%
+#Confusion matrix:
+#0   1 class.error
+#0 235  28   0.1064639
+#1  47 134   0.2596685
+
 importance (rf.biome)
-# nothing is showing as significantly important
+varImpPlot (rf.biome)
+# source is showing as the most significant, sex is showing little signficance
+#the OTUs 77, 85, 71,54, 41, 9 look very significant
+#Renyi looks more predictive than the ShannonIndex
+
+yhat.rf = predict(rf.biome,newdata=test, type="response")
+
+#need to find another measure of success here. 
+#mean((yhat.rf-test)^2)
+##[1] 0.3987529
 
 
+table(yhat.rf, test$Diet)
+#yhat.rf  0  1
+#       0 77 15
+#       1 10 47
+25/149
+#16.78 % misclassification rate
 
+#---------------- Boosting
+
+library (gbm)
+set.seed(14)
+boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
+boost.biome
+#A gradient boosted model with bernoulli loss function.
+#5000 iterations were performed.
+#There were 99 predictors of which 0 had non-zero influence
+
+par(mfrow=c(1,2))
+plot(boost.biome ,i="rm")
+plot(boost.biome ,i=" lstat")
