@@ -636,7 +636,7 @@ table(yhat.rf, test$Diet)
 25/149
 #16.78 % misclassification rate
 
-#---------------- Boosting
+#---------------- Boosting ######
 
 set.seed(14)
 boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
