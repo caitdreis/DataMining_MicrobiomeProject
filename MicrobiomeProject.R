@@ -7,6 +7,7 @@ library(vegan) #calculation of diversity metrics
 library(psych) #descriptive statistics
 library(class) #package for KNN model
 library(randomForest) #package for Random Forest model
+library (gbm) #package for boosting model
 library(pscl) #For logistic regression R^2
 library(ROCR) #For ROC curves
 
@@ -604,8 +605,6 @@ table(diet.cluster$cluster, microbiome$Diet)
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
 
-library(randomForest)
-
 # went by the rule of sqrt(p variables) when building a random forest of classification trees
 # sqrt(6701) = 81.86
 rf.biome= randomForest(Diet~.,data=train, mtry=80, importance =TRUE)
@@ -639,7 +638,6 @@ table(yhat.rf, test$Diet)
 
 #---------------- Boosting
 
-library (gbm)
 set.seed(14)
 boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
 boost.biome
