@@ -1,11 +1,18 @@
 #Microbiome Project
 
+#----------------- Packages
 library(tidyverse) # Load the core tidyverse packages: ggplot2, tibble, 
 # tidyr, readr, purrr, and dplyr
+install.packages("vegan") 
+library(vegan) #calculation of diversity metrics
+library(psych) #descriptive statistics
 
+#----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
 
+#----------------- Read in Data
 microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', stringsAsFactors = FALSE)
+#View(microbiome)
 
 #----------------- Grading Criteria
 #Data exploration
@@ -117,6 +124,56 @@ plot(Diet~Source, data=microbiome)
 # 10 - SI9
 # 11 - Stomach
 # 12 - Cecum
+
+#----------------- Feature Engineering of Diversity Metrics ####
+#Shannon Diversity Index
+microbiome$ShannonIndex <- NULL
+microbiome$ShannonIndex <- diversity(microbiome[,6:94])
+summary(microbiome$ShannonIndex)
+#Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#0.000001 0.279000 0.693300 1.218000 1.161000 4.365000 
+
+#Reyyi Index
+#specnumber fucntion finds the number of species in the sample
+specnumber(microbiome[,6:94]) #89 species present in each sample
+h <- diversity(microbiome[,6:94])
+J <- h/log(specnumber(microbiome[,6:94])) #assessing Pielou's eveness
+
+#now take a random subset of six sites to assess Renyi diversity index
+k <- sample(nrow(microbiome[,6:94]), 6) 
+R <- renyi(microbiome[,6:94][k,])
+plot(R) #can visualize these six sites, labels sites chosen
+
+#----------------- Further Descriptive and ANOVA Exploration with Featured Variable 
+describeBy(microbiome$ShannonIndex, microbiome$Diet)
+#Descriptive statistics by group 
+#group: 0
+#vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
+#X1    1 350 1.25 1.45   0.69    1.02 0.64   0 4.36  4.36 1.43     0.51 0.08
+#-------------------------------------------------------------------------- 
+#  group: 1
+#vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
+#X1    1 243 1.14 1.34   0.71    0.89 0.75   0 4.36  4.36 1.63     1.41 0.09
+
+#significance testing with ANOVA
+fit <- aov(microbiome$ShannonIndex ~ microbiome$Diet, data=microbiome)
+plot(fit)
+summary(fit)
+#               Df Sum Sq Mean Sq F value Pr(>F)
+#microbiome$Diet   1    1.7   1.712   0.869  0.352
+#Residuals       591 1164.2   1.970    
+#No significant on the 
+
+#posthoc TukeyHSD (Honestly Significant Differences)
+TukeyHSD(fit) #where fit comes from aov()
+#Tukey multiple comparisons of means
+#95% family-wise confidence level
+#Fit: aov(formula = microbiome$ShannonIndex ~ microbiome$Diet, data = microbiome)
+#$`microbiome$Diet`
+#       diff        lwr       upr     p adj
+#1-0 -0.1092519 -0.3394191 0.1209153 0.3515974
+#Tukey's posthoc testing tells us that there is truly no significance in diet's
+#effect on the mean diversity index measure.
 
 #----------------- Multinomial Logistic Regression ######
 
