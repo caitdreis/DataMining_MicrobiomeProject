@@ -175,6 +175,19 @@ TukeyHSD(fit) #where fit comes from aov()
 #Tukey's posthoc testing tells us that there is truly no significance in diet's
 #effect on the mean diversity index measure.
 
+#significance testing with ANOVA using sex
+fit.sex <- aov(microbiome$ShannonIndex ~ microbiome$Sex, data=microbiome)
+plot(fit.sex)
+summary(fit.sex)
+#               Df Sum Sq Mean Sq F value Pr(>F)
+#microbiome$Sex   1      0  0.0022   0.001  0.974
+#Residuals      591   1166  1.9727 
+
+#posthoc TukeyHSD 
+TukeyHSD(fit.sex) 
+#         diff        lwr       upr     p adj
+#1-0 0.006854582 -0.4008207 0.4145299 0.9736681
+
 #----------------- Multinomial Logistic Regression ######
 
 
