@@ -3,10 +3,12 @@
 #----------------- Packages
 library(tidyverse) # Load the core tidyverse packages: ggplot2, tibble, 
 # tidyr, readr, purrr, and dplyr
-install.packages("vegan") 
 library(vegan) #calculation of diversity metrics
 library(psych) #descriptive statistics
 library(class) #package for KNN model
+library(randomForest) #package for Random Forest model
+library(pscl) #For logistic regression R^2
+library(ROCR) #For ROC curves
 
 #----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
@@ -252,18 +254,147 @@ TukeyHSD(fit.sex.ren)
 #         diff        lwr       upr     p adj
 #1-0 0.038679 -0.3460048 0.4233628 0.8435246
 
+
 #----------------- Training and Testing Sets ######
 
 #Cross validation of testing data with testing data entered in for test
 set.seed(17)
 train = sample(1:nrow(microbiome), nrow(microbiome) * .75)
-test <- microbiome[-train, ]
-train <- microbiome[train, ]
+test <- microbiome[-train, c(1:98)]
+train <- microbiome[train, c(1:98)]
+
+microbiome <- microbiome[, c(1:98)]
 
 #----------------- Multinomial Logistic Regression ######
 
+model <- glm(Diet~.,family=binomial(link='logit'),data=train)
+summary(model) #Every variable is significant...
+anova(model, test="Chisq")
+#A large p-value here indicates that the model without the variable explains 
+#more or less the same amount of variation.
 
+# Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
+# NULL                     443      600.3              
+# Source 12     59.3       431      541.0 2.998e-08 ***
+# Sex     1      3.6       430      537.4 0.0591044 .  
+# OTU0    1      2.2       429      535.2 0.1371864    
+# OTU1    1      2.8       428      532.4 0.0926576 .  
+# OTU2    1     37.5       427      494.9 9.225e-10 ***
+# OTU3    1      6.5       426      488.3 0.0105465 *  
+# OTU4    1      0.5       425      487.8 0.4627754    
+# OTU5    1      0.6       424      487.2 0.4295599    
+# OTU6    1      0.0       423      487.1 0.8667479    
+# OTU7    1      0.5       422      486.6 0.4750674    
+# OTU8    1      8.3       421      478.4 0.0040625 ** 
+# OTU9    1     33.9       420      444.4 5.658e-09 ***
+# OTU10   1      8.4       419      436.0 0.0037840 ** 
+# OTU11   1      0.4       418      435.6 0.5108424    
+# OTU12   1      0.0       417      435.6 0.8449512    
+# OTU13   1      4.2       416      431.4 0.0406067 *  
+# OTU14   1      0.6       415      430.8 0.4448434    
+# OTU15   1      1.8       414      429.0 0.1752748    
+# OTU16   1      1.1       413      427.9 0.2912993    
+# OTU17   1      1.1       412      426.8 0.3026798    
+# OTU18   1      9.5       411      417.3 0.0020388 ** 
+# OTU19   1      0.6       410      416.7 0.4489548    
+# OTU20   1      0.4       409      416.3 0.5055763    
+# OTU21   1      0.5       408      415.7 0.4636021    
+# OTU22   1      2.9       407      412.8 0.0884765 .  
+# OTU23   1      0.8       406      412.0 0.3804481    
+# OTU24   1      2.5       405      409.5 0.1124038    
+# OTU25   1     15.8       404      393.8 7.213e-05 ***
+# OTU26   1      2.9       403      390.9 0.0913290 .  
+# OTU27   1      0.0       402      390.9 0.8350321    
+# OTU28   1      0.0       401      390.9 0.9077022    
+# OTU29   1      0.0       400      390.9 0.9689933    
+# OTU30   1      0.6       399      390.3 0.4524332    
+# OTU31   1      4.5       398      385.8 0.0337931 *  
+# OTU32   1      0.6       397      385.2 0.4387198    
+# OTU33   1      4.3       396      380.9 0.0385292 *  
+# OTU34   1     11.8       395      369.1 0.0005996 ***
+# OTU35   1      0.0       394     7497.1 1.0000000    
+# OTU36   1   7136.6       393      360.5 < 2.2e-16 ***
+# OTU37   1      0.9       392      359.6 0.3411374    
+# OTU38   1      0.3       391      359.3 0.5668152    
+# OTU39   1      3.8       390      355.4 0.0507401 .  
+# OTU40   1      4.0       389      351.5 0.0457329 *  
+# OTU41   1     50.9       388      300.6 9.756e-13 ***
+# OTU42   1      2.8       387      297.8 0.0957792 .  
+# OTU43   1      0.3       386      297.5 0.5623545    
+# OTU44   1      0.2       385      297.3 0.6938438    
+# OTU45   1      0.4       384      296.9 0.5262524    
+# OTU46   1      0.0       383      296.9 0.9957600    
+# OTU47   1      1.9       382      294.9 0.1629259    
+# OTU48   1      2.4       381      292.6 0.1221490    
+# OTU49   1      0.4       380      292.2 0.5274164    
+# OTU50   1      0.0       379     6415.8 1.0000000    
+# OTU51   1   6125.3       378      290.5 < 2.2e-16 ***
+# OTU52   1      0.0       377      290.5 0.9988007    
+# OTU53   1      0.5       376      290.0 0.4682265    
+# OTU54   1      0.0       375     5767.0 1.0000000    
+# OTU55   1      0.0       374     6055.3 1.0000000    
+# OTU56   1      0.0       373     6199.5 1.0000000    
+# OTU57   1   1081.3       372     5118.2 < 2.2e-16 ***
+# OTU58   1      0.0       371     5694.9 1.0000000    
+# OTU59   1      0.0       370     6848.3 1.0000000    
+# OTU60   1    937.1       369     5911.2 < 2.2e-16 ***
+# OTU61   1      0.0       368     6271.6 1.0000000    
+# OTU62   1    648.8       367     5622.8 < 2.2e-16 ***
+# OTU63   1      0.0       366     5983.2 1.0000000    
+# OTU64   1    288.3       365     5694.9 < 2.2e-16 ***
+# OTU65   1    288.3       364     5406.5 < 2.2e-16 ***
+# OTU66   1      0.0       363     5911.2 1.0000000    
+# OTU67   1      0.0       362     5983.2 1.0000000    
+# OTU68   1    144.2       361     5839.1 < 2.2e-16 ***
+# OTU69   1   5594.5       360      244.6 < 2.2e-16 ***
+# OTU70   1      3.0       359      241.6 0.0823970 .  
+# OTU71   1     11.2       358      230.4 0.0008157 ***
+# OTU72   1      0.0       357      230.4 0.9259223    
+# OTU73   1      0.0       356     7136.6 1.0000000    
+# OTU74   1   6921.8       355      214.9 < 2.2e-16 ***
+# OTU75   1      0.0       354     5983.2 1.0000000    
+# OTU76   1      0.0       353     6704.1 1.0000000    
+# OTU77   1      0.0       352     7136.6 1.0000000    
+# OTU78   1   1513.8       351     5622.8 < 2.2e-16 ***
+# OTU79   1      0.0       350     5839.1 1.0000000    
+# OTU80   1      0.0       349     6055.3 1.0000000    
+# OTU81   1      0.0       348     6127.4 1.0000000    
+# OTU82   1    793.0       347     5334.5 < 2.2e-16 ***
+# OTU83   1      0.0       346     5334.5 1.0000000    
+# OTU84   1      0.0       345     5334.5 1.0000000    
+# OTU85   1   5168.6       344      165.8 < 2.2e-16 ***
+# OTU86   1      0.0       343     4397.3 1.0000000    
+# OTU87   1      0.0       342     5190.3 1.0000000    
+# OTU88   1   1369.7       341     3820.6 < 2.2e-16 ***
+# OTU89   1    360.4       340     3460.2 < 2.2e-16 ***
+# OTU90   1      0.0       339     4109.0 1.0000000    
+# OTU91   1    360.4       338     3748.5 < 2.2e-16 ***
+# OTU92   1    504.6       337     3243.9 < 2.2e-16 ***
+# OTU93   1      0.0       336     4181.1 1.0000000    
+# OTU94   1    288.3       335     3892.7 < 2.2e-16 ***
 
+#Many of the OTU groups do not help lower the deviance
+
+pR2(model)
+#      llh      llhNull           G2        McFadden      r2ML         r2CU 
+# -1946.357283  -300.141633 -3292.431301    -5.484796  -1660.350015 -2239.857196
+
+fitted.results <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+misClasificError <- mean(fitted.results != test$Diet)
+print(paste('Accuracy',1-misClasificError))
+#"Accuracy 0.751677852348993"
+
+p <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
+p
+pr <- prediction(p, test$Diet)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc #0.7410085
 
 #----------------- K-Nearest Neighbors (KNN) ######
 
@@ -271,6 +402,7 @@ train <- microbiome[train, ]
 training <- train[,!colnames(train) %in% "Diet"]
 testing <- test[,!colnames(test) %in% "Diet"]
 
+set.seed(10)
 #create model with training data, test data, and training set classifier
 knn.pred1 <- knn(training, testing, train$Diet)
 knn.pred5 <- knn(training, testing, train$Diet, k=5)
@@ -280,29 +412,29 @@ knn.pred10 <- knn(training, testing, train$Diet, k=10)
 pred.mat1 <- table("Predictions" = knn.pred1, Actual = test$Diet); pred.mat1
 #             Actual
 # Predictions  0  1
-#           0 70 27
-#           1 17 35
+#           0 74 18
+#           1 13 44
 
 pred.mat5 <- table("Predictions" = knn.pred5, Actual = test$Diet); pred.mat5
 #             Actual
 # Predictions  0  1
-#           0 71 36
-#           1 16 26
+#           0 77 21
+#           1 10 41
 
 pred.mat10 <- table("Predictions" = knn.pred10, Actual = test$Diet); pred.mat10
 #              Actual
 # Predictions  0  1
-#           0 71 38
-#           1 16 24
+#           0 79 26
+#           1 8  36
 
 #assess accuracy of model prediction
-(accuracy <- sum(diag(pred.mat1))/nrow(test) * 100) #70.4698%
-(accuracy <- sum(diag(pred.mat5))/nrow(test) * 100) #65.10067%
-(accuracy <- sum(diag(pred.mat10))/nrow(test) * 100) #63.75839%
+(accuracy <- sum(diag(pred.mat1))/nrow(test) * 100) #79.19463% -- best model tied with k=5 below
+(accuracy <- sum(diag(pred.mat5))/nrow(test) * 100) #79.19463%
+(accuracy <- sum(diag(pred.mat10))/nrow(test) * 100) #77.18121%
 
 
 #----------------- K-Means Clustering #####
-set.seed(1)
+set.seed(11)
 diet.cluster <- kmeans(microbiome[,4:98],2)
 
 table(diet.cluster$cluster, microbiome$Diet)
@@ -312,9 +444,9 @@ table(diet.cluster$cluster, microbiome$Diet)
 
 #This does not look promising. Kmeans is likely not going to be helpful in creating a prediction model.
 
+
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
-library(randomForest)
 
 # went by the rule of ???p variables when building a random forest of classification trees
 # sqrt(6701) = 81.86
