@@ -32,8 +32,7 @@ microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', strings
 #detail, and correctness.
 
 #----------------- Data Exploration & Cleaning ####
-#This dataset was pre-curated from the original Science article and is thus relatively clean to begin with
-library(psych)
+#This dataset was pre-curated from the original Science article
 
 nrow(microbiome) #675 observations
 
@@ -136,8 +135,8 @@ plot(Diet~Source, data=microbiome)
 microbiome$ShannonIndex <- NULL
 microbiome$ShannonIndex <- diversity(microbiome[,4:98])
 summary(microbiome$ShannonIndex)
-#Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#0.000001 0.348860 0.693277 1.213849 1.168294 4.432951
+#   Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#0.000001 0.348900 0.693300 1.214000 1.168000 4.433000
 
 #Reyyi Index
 #specnumber fucntion finds the number of species in the sample
@@ -155,8 +154,8 @@ plot(R) #can visualize these six sites, label sites chosen
 microbiome$Renyi <- NULL
 microbiome$Renyi <- renyi(microbiome[,4:98], scales = 32)
 summary(microbiome$Renyi)
-# Min.  1st Qu.   Median   Mean  3rd Qu.     Max. 
-# 0.0000  0.1216  0.5273  0.9932  0.9235  4.0791 
+# Min.  1st Qu.   Median   Mean  3rd Qu.    Max. 
+# 0.0000  0.1216  0.5273  0.9932  0.9235  4.0790  
 
 #Is there a significant difference between these indexes?
 comp.index <- aov(microbiome$ShannonIndex ~ microbiome$Renyi, data=microbiome)
@@ -165,6 +164,8 @@ summary(comp.index)
 #                 Df Sum Sq Mean Sq F value Pr(>F)    
 #microbiome$Renyi   1 1183.2    1183   37225 <2e-16 ***
 #Residuals        591   18.8       0  
+#the signifcant p-value tells us that there is a significant difference between the mean
+#Shannon Index and Renyi index.
 
 #----------------- Further Descriptive and ANOVA Exploration with Featured Variables 
 #----------------- Shannon Index
@@ -220,7 +221,7 @@ describeBy(microbiome$Renyi, microbiome$Diet)
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 350 1.04 1.37   0.56     0.8 0.56   0 4.07  4.07 1.53     0.66 0.07
 # --------------------------------------------------------------------------------------------- 
-#   group: 1
+#group: 1
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 0.93 1.26   0.53    0.67 0.62   0 4.08  4.08 1.76     1.64 0.08
 
@@ -426,11 +427,11 @@ step(model.null,
 
 #Step model with 39 predictors (fewer than half of the full model's predictors)
 step.model <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
-      OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
-        OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
-        OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
-        OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
-        OTU43 + OTU24, family = binomial(link = "logit"), data = train)
+                    OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
+                    OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
+                    OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
+                    OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
+                    OTU43 + OTU24, family = binomial(link = "logit"), data = train)
 
 summary(step.model) 
 # Coefficients:
@@ -603,20 +604,20 @@ table(diet.cluster$cluster, microbiome$Diet)
 
 #This does not look promising. Kmeans is likely not going to be helpful in creating a prediction model.
 
-
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
 
 # went by the rule of sqrt(p variables) when building a random forest of classification trees
 # sqrt(6701) = 81.86
+set.seed(100)
 rf.biome= randomForest(Diet~.,data=train, mtry=80, importance =TRUE)
 rf.biome
 #No. of variables tried at each split: 80
-#OOB estimate of  error rate: 16.89%
+#OOB estimate of  error rate: 15.99%
 #Confusion matrix:
-#0   1 class.error
-#0 235  28   0.1064639
-#1  47 134   0.2596685
+#  0   1 class.error
+#0 236  27   0.1026616
+#1  44 137   0.2430939
 
 importance (rf.biome)
 varImpPlot (rf.biome)
@@ -629,7 +630,6 @@ yhat.rf = predict(rf.biome,newdata=test, type="response")
 #need to find another measure of success here. 
 #mean((yhat.rf-test)^2)
 ##[1] 0.3987529
-
 
 table(yhat.rf, test$Diet)
 #yhat.rf  0  1
