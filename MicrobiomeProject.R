@@ -841,7 +841,7 @@ set.seed(14)
 #The bernoulli distribution only produced NAs - does not like the factor, so created a new train set with diet as a character
 train.boost <- train
 train.boost$Diet <- as.character(train.boost$Diet)
-boost.biome=gbm(Diet~.,data=train.boost, distribution="bernoulli",n.trees=5000, interaction.depth=5)
+boost.biome=gbm(Diet~.,data=train.boost, distribution="bernoulli",n.trees=5000, interaction.depth=5, shrinkage = 0.01)
 
 boost.biome
 #5000 iterations were performed.
@@ -860,7 +860,7 @@ plot(boost.biome ,i="OTU73")
 plot(boost.biome ,i="OTU75")
 
 #predict against test set
-boost.p=predict (boost.biome ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
+boost.p=predict(boost.biome ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
 boost.p
 boost.p <- ifelse(boost.p > 0.5,1,0)
 table(boost.p, test$Diet)
@@ -876,7 +876,44 @@ boost.auc <- as.numeric(performance(boost.pr , "auc")@y.values)
 boost.auc
 #0.7731739
 
-#----------------------- Second Boosting Model
+#----------- Boosting model with smaller shrinkage number
+
+set.seed(14)
+boost.biom2=gbm(Diet~.,data=train.boost, distribution="bernoulli",n.trees=5000, interaction.depth=5, shrinkage = 0.0005)
+
+boost.biom2
+#5000 iterations were performed.
+#There were 97 predictors of which 0 had non-zero influence.
+summary(boost.biom2)
+varImp(boost.biom2,numTrees = 50)
+
+par(mfrow=c(1,2))
+plot(boost.biome ,i="Source") #to plot against significant regressors
+plot(boost.biome ,i="OTU6")#
+plot(boost.biome ,i="OTU9")
+plot(boost.biome ,i="OTU25")
+plot(boost.biome ,i="OTU41")
+plot(boost.biome ,i="OTU77")
+plot(boost.biome ,i="OTU82")
+
+#predict against test set
+boos2.p=predict(boost.biom2 ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
+boos2.p
+boos2.p <- ifelse(boos2.p > 0.5,1,0)
+table(boos2.p, test$Diet)
+#   0  1
+# 79 20
+#  8 42
+(8+20)/149
+#18.79% misclassification rate
+
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boos2.p))
+boos2.pr <- prediction(as.numeric(boos2.p), as.numeric(test$Diet))
+boos2.auc <- as.numeric(performance(boos2.pr , "auc")@y.values)
+boos2.auc
+#0.7927327
+
+#----------------------- Next Boosting Model with cross validation
 fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
 tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 2500, shrinkage = 0.01, n.minobsinnode = 10)
 set.seed(108)
