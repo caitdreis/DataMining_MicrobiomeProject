@@ -10,8 +10,10 @@ library(psych) #descriptive statistics
 library(class) #package for KNN model
 library(randomForest) #package for Random Forest model
 library (gbm) #package for boosting model
+library(caret)
 library(pscl) #For logistic regression R^2
 library(ROCR) #For ROC curves
+library(pROC) #ROC curves
 
 #----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
@@ -625,6 +627,12 @@ varImpPlot (rf.biome)
 #the OTUs 77, 85, 71,54, 41, 9 look very significant
 #Renyi looks more predictive than the ShannonIndex
 
+biome.pred <- predict(rf.biome, type="response")
+train$rf <- biome.pred
+rf.roc <- roc(Diet ~ rf, data = train)
+plot(rf.roc) 
+
+#predict against test data
 yhat.rf = predict(rf.biome,newdata=test, type="response")
 
 #need to find another measure of success here. 
@@ -640,13 +648,43 @@ table(yhat.rf, test$Diet)
 
 #---------------- Boosting ######
 
-set.seed(14)
-boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
-boost.biome
-#A gradient boosted model with bernoulli loss function.
-#5000 iterations were performed.
-#There were 99 predictors of which 0 had non-zero influence
+#set.seed(14)
+#boost.biome <- gbm(Diet~., data = train, distribution = 'huberized', n.trees = 5000, shrinkage = .01)
 
-par(mfrow=c(1,2))
-plot(boost.biome ,i="rm")
-plot(boost.biome ,i=" lstat")
+#The bernoulli distribution only produced NAs
+#boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
+
+#boost.biome
+#A gradient boosted model with huberized loss function.
+#5000 iterations were performed.
+#There were 97 predictors of which 0 had non-zero influence.
+#summary(boost.biome)
+#importance(boost.biome)
+
+#par(mfrow=c(1,2))
+#plot(boost.biome ,i="") to plot against significant regressors
+#plot(boost.biome ,i=" ")#
+
+fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
+tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 2500, shrinkage = 0.01, n.minobsinnode = 10)
+set.seed(108)
+fit <- train(Diet ~ ., data = train,method = "gbm", trControl = fitControl, verbose = FALSE, tuneGrid = tune_Grid)
+
+fit
+#tochastic Gradient Boosting 
+#444 samples
+#98 predictor
+#2 classes: '0', '1' 
+
+#No pre-processing
+#Resampling: Cross-Validated (10 fold) 
+#Summary of sample sizes: 400, 399, 400, 399, 400, 399, ... 
+#Resampling results:
+#Accuracy   Kappa   
+#0.8061616  0.589899
+
+summary(fit)
+importance(fit)
+#plot(fit ,i= 'OTU41 ') #to plot against significant regressors
+#plot(boost.biome ,i=" ")#
+
