@@ -791,27 +791,45 @@ rf.auc3
 
 #---------------- Boosting 
 
-#set.seed(14)
-#boost.biome <- gbm(Diet~., data = train, distribution = 'huberized', n.trees = 5000, shrinkage = .01)
+set.seed(14)
+#The bernoulli distribution only produced NAs - does not like the factor, so created a new train set with diet as a character
+train.boost <- train
+train.boost$Diet <- as.character(train.boost$Diet)
+boost.biome=gbm(Diet~.,data=train.boost, distribution="bernoulli",n.trees=5000, interaction.depth=5)
 
-#The bernoulli distribution only produced NAs
-#boost.biome=gbm(Diet~.,data=train, distribution="bernoulli",n.trees=5000, interaction.depth=5)
-
-#boost.biome
-#A gradient boosted model with huberized loss function.
+boost.biome
 #5000 iterations were performed.
 #There were 97 predictors of which 0 had non-zero influence.
-#summary(boost.biome)
-#importance(boost.biome)
+summary(boost.biome)
+importance(boost.biome)
+varImp(boost.biome,numTrees = 50)
 
-#par(mfrow=c(1,2))
-#plot(boost.biome ,i="") to plot against significant regressors
-#plot(boost.biome ,i=" ")#
+par(mfrow=c(1,2))
+plot(boost.biome ,i="Source") #to plot against significant regressors
+plot(boost.biome ,i="OTU85")#
+plot(boost.biome ,i="OTU41")
+plot(boost.biome ,i="OTU14")
+plot(boost.biome ,i="OTU53")
+plot(boost.biome ,i="OTU73")
+plot(boost.biome ,i="OTU75")
 
+#predict against test set
+boost.p=predict (boost.biome ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
+boost.p
+boost.p <- ifelse(boost.p > 0.5,1,0)
+table(boost.p, test$Diet)
+#   0  1
+#0 78 21
+#1  9 41
+(9+21)/149
+#20.13 misclassification rate
+
+
+#----------------------- Second Boosting Model
 fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
 tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 2500, shrinkage = 0.01, n.minobsinnode = 10)
 set.seed(108)
-fit <- train(Diet ~ ., data = train,method = "gbm", trControl = fitControl, verbose = FALSE, tuneGrid = tune_Grid)
+fit <- train(Diet ~ ., data = train.boost, method = "gbm", trControl = fitControl, verbose = FALSE, tuneGrid = tune_Grid)
 
 fit
 #tochastic Gradient Boosting 
@@ -824,10 +842,38 @@ fit
 #Summary of sample sizes: 400, 399, 400, 399, 400, 399, ... 
 #Resampling results:
 #Accuracy   Kappa   
-#0.8061616  0.589899
+#0.7636869  0.491104
 
 summary(fit)
-importance(fit)
-#plot(fit ,i= 'OTU41 ') #to plot against significant regressors
-#plot(boost.biome ,i=" ")#
+varImp(fit,numTrees = 50)
+#         Overall
+#OTU41   100.0000
+#Source4  50.9782
+#OTU9      8.2240
+#OTU77     6.3814
+#OTU85     5.8483
+#OTU6      5.7842
+#OTU54     1.4104
+#OTU66     1.0738
+#OTU74     0.8517
+#OTU73     0.8185
+#OTU19     0.0000
+#OTU49     0.0000
+#OTU13     0.0000
+#OTU36     0.0000
+#OTU78     0.0000
+#OTU71     0.0000
+#OTU80     0.0000
+#OTU61     0.0000
+#OTU88     0.0000
+#OTU81     0.0000
 
+#try against the test data
+fit.p= predict(fit ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'raw')
+fit.p
+table(fit.p, test$Diet)
+#   0  1
+#0 72 24
+#1 15 38
+(15+24)/149
+#26.17 Misclassification rate
