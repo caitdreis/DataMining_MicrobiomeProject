@@ -13,7 +13,7 @@ library (gbm) #package for boosting model
 library(caret)
 library(pscl) #For logistic regression R^2
 library(ROCR) #For ROC curves
-library(pROC) #ROC curves
+
 
 #----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
@@ -627,24 +627,27 @@ varImpPlot (rf.biome)
 #the OTUs 77, 85, 71,54, 41, 9 look very significant
 #Renyi looks more predictive than the ShannonIndex
 
-biome.pred <- predict(rf.biome, type="response")
-train$rf <- biome.pred
-rf.roc <- roc(Diet ~ rf, data = train)
-plot(rf.roc) 
-
-#predict against test data
-yhat.rf = predict(rf.biome,newdata=test, type="response")
-
-#need to find another measure of success here. 
-#mean((yhat.rf-test)^2)
-##[1] 0.3987529
-
-table(yhat.rf, test$Diet)
-#yhat.rf  0  1
+rf.p <- predict(rf.biome,newdata=subset(test,select=c(2:98)),type='response')
+rf.p
+table(rf.p, test$Diet)
+#         0  1
 #       0 77 15
 #       1 10 47
 25/149
 #16.78 % misclassification rate
+
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p))
+rf.pr <- prediction(as.numeric(rf.p), as.numeric(test$Diet))
+
+#rf.pr <- prediction(rf.p, test$Diet)
+rf.prf <- performance(rf.pr, measure = "tpr", x.measure = "fpr")
+plot(rf.prf)
+
+rf.auc <- performance(rf.pr, measure = "auc")
+rf.auc <- auc@y.values[[1]]
+rf.auc 
+
+
 
 #---------------- Boosting ######
 
