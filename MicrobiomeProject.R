@@ -684,10 +684,11 @@ table(rf.p, test$Diet)
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p))
 rf.pr <- prediction(as.numeric(rf.p), as.numeric(test$Diet))
 
-#rf.pr <- prediction(rf.p, test$Diet)
+#ROC
 rf.prf <- performance(rf.pr, measure = "tpr", x.measure = "fpr")
 plot(rf.prf)
 
+#AUC
 rf.pred = predict(rf.biome,type="prob")[, 2]
 rf.roc = prediction(rf.pred, train$Diet)
 rf.auc <- as.numeric(performance(rf.roc , "auc")@y.values)
@@ -735,9 +736,11 @@ rf.pr2 <- prediction(as.numeric(rf.p2), as.numeric(test$Diet))
 rf.prf2 <- performance(rf.pr2, measure = "tpr", x.measure = "fpr")
 plot(rf.prf2)
 
-rf.auc2 <- performance(rf.pr2, measure = "auc")
-rf.auc2 <- auc@y.values[[1]]
-rf.auc2 
+rf.pred2 = predict(rf.biome2,type="prob")[, 2]
+rf.roc2 = prediction(rf.pred2, train$Diet)
+rf.auc2 <- as.numeric(performance(rf.roc2 , "auc")@y.values)
+rf.auc2
+#0.8644413
 
 #RF model remvoving an regressors with less than 1 
 importance    <- importance(rf.biome)
@@ -783,14 +786,17 @@ table(rf.p3, test$Diet)
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p3))
 rf.pr3 <- prediction(as.numeric(rf.p3), as.numeric(test$Diet))
 
-#rf.pr <- prediction(rf.p, test$Diet)
+#ROC
 rf.prf3 <- performance(rf.pr3, measure = "tpr", x.measure = "fpr")
 par(mfrow=c(2,2))
 plot(rf.prf3)
 
-rf.auc3 <- performance(rf.pr3, measure = "auc")
-rf.auc3 <- auc@y.values[[1]]
-rf.auc3 
+#AUC
+rf.pred3 = predict(rf.biome3,type="prob")[, 2]
+rf.roc3 = prediction(rf.pred3, train$Diet)
+rf.auc3 <- as.numeric(performance(rf.roc3 , "auc")@y.values)
+rf.auc3
+#0.8802386
 
 #---------------- Boosting 
 
@@ -825,7 +831,7 @@ table(boost.p, test$Diet)
 #0 78 21
 #1  9 41
 (9+21)/149
-#20.13 misclassification rate
+#20.13% misclassification rate
 
 
 #----------------------- Second Boosting Model
