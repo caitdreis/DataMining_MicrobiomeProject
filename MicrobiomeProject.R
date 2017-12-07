@@ -265,13 +265,18 @@ TukeyHSD(fit.sex.ren)
 
 #Cross validation of testing data with testing data entered in for test
 set.seed(17)
-train = sample(1:nrow(microbiome), nrow(microbiome) * .75)
-test <- microbiome[-train, c(1:98)]
-train <- microbiome[train, c(1:98)]
+sample = sample(1:nrow(microbiome), nrow(microbiome) * .75)
+test <- microbiome[-sample, c(1:98)]
+train <- microbiome[sample, c(1:98)]
+test_div <- microbiome[-sample,] #includes diversity indices
+train_div <- microbiome[sample,] #includes diversity indices
 
+microbiome_div <- microbiome
 microbiome <- microbiome[, c(1:98)]
 
 #----------------- Basic Multinomial Logistic Regression ######
+
+#NOTE: the first few logistic models were run WITHOUT the diversity indices
 
 #Create a model with all possible predictors
 model <- glm(Diet~.,family=binomial(link='logit'),data=train)
@@ -556,6 +561,45 @@ plot(prf)
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7875417 -- Better!
+
+
+#----------------- Stepwise Model + Diversity Indices ######
+
+#Same step model as before, but with the addition of ShannonIndex and Renyi predictor variables
+step.model.div <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
+                    OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
+                    OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
+                    OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
+                    OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
+                    OTU43 + OTU24+ShannonIndex+Renyi, family = binomial(link = "logit"), data = train_div)
+
+summary(step.model.div) 
+#Neither diversity index appears to be significant in this model
+
+pR2(step.model.div)
+#McFadden
+#0.7164411 (slightly higher than before)
+
+#Previous McFadden
+#0.7159719
+
+fitted.results <- predict(step.model.div,newdata=subset(test_div,select=c(2:100)),type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+misClasificError <- mean(fitted.results != test_div$Diet)
+print(paste('Accuracy',1-misClasificError))
+#Accuracy 0.74496644295302 - Unchanged from before
+
+p <- predict(step.model.div,newdata=subset(test_div,select=c(2:100)),type='response')
+p
+pr <- prediction(p, test_div$Diet)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc #0.7886541 -- Within the range of error, so it is likely not worth including the extra predictors
+#Previous AUC of 0.7875417 
 
 
 #----------------- K-Nearest Neighbors (KNN) ######
