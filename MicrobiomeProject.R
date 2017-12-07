@@ -671,6 +671,7 @@ varImpPlot (rf.biome)
 #the OTUs 77, 85, 71,54, 41, 9 look very significant
 #Renyi looks more predictive than the ShannonIndex
 
+
 rf.p <- predict(rf.biome,newdata=subset(test,select=c(2:98)),type='response')
 rf.p
 table(rf.p, test$Diet)
@@ -691,9 +692,104 @@ rf.auc <- performance(rf.pr, measure = "auc")
 rf.auc <- auc@y.values[[1]]
 rf.auc 
 
+#RF with variables with Mean Decrease Accuracy ~10 or higher, smaller number of predictors changed mtry to 3
+set.seed(102)
+rf.biome2 = randomForest(Diet~ OTU77+ OTU85 + OTU71 + OTU54 + OTU41 + OTU9 + Source, data=train, mtry=3, importance =TRUE)
+rf.biome2
+#Number of trees: 500, No. of variables tried at each split: 3
+#OOB estimate of  error rate: 16.22%
+#Confusion matrix:
+#    0   1 class.error
+#0 235  28   0.1064639
+#1  44 137   0.2430939
+
+importance (rf.biome2)
+varImpPlot (rf.biome2)
+#Mean Decrease accuracy and Mean Decrease Gini went down across the board. 
+#            0         1           MeanDecreaseAccuracy MeanDecreaseGini
+#OTU77  12.594688 23.538983            23.954547         30.08362
+#OTU85   7.630045 19.021186            17.401198         26.73102
+#OTU71   7.566652  2.699498             7.485637         21.28655
+#OTU54   2.810747  6.697529             6.214892         19.83674
+#OTU41  42.446493 52.255283            60.191907         55.55406
+#OTU9    9.702282  9.090364            13.092183         22.52913
+#Source 30.358108 49.766697            51.591274         37.58660
+
+rf.p2 <- predict(rf.biome2,newdata=subset(test,select=c(2:98)),type='response')
+rf.p2
+table(rf.p2, test$Diet)
+#  0  1
+#0 78 15
+#1  9 47
+(9+15)/149
+# 16.107% Misclassification rate (minute improvement from full model)
 
 
-#---------------- Boosting ######
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p2))
+rf.pr2 <- prediction(as.numeric(rf.p2), as.numeric(test$Diet))
+
+#rf.pr <- prediction(rf.p, test$Diet)
+rf.prf2 <- performance(rf.pr2, measure = "tpr", x.measure = "fpr")
+plot(rf.prf2)
+
+rf.auc2 <- performance(rf.pr2, measure = "auc")
+rf.auc2 <- auc@y.values[[1]]
+rf.auc2 
+
+#RF model remvoving an regressors with less than 1 
+importance    <- importance(rf.biome)
+varImportance <- data.frame(Variables = row.names(importance), 
+                            Importance = round(importance[ ,'MeanDecreaseGini'],2))
+
+#Create a rank variable based on importance
+rankImportance <- varImportance %>%
+  mutate(Rank = paste0('#',dense_rank(desc(Importance))))
+rankImportance
+
+#RF with mean decrease gini < 1 removed, mtry updated to 7 to reflect change in p 
+set.seed(103)
+rf.biome3 <- randomForest(Diet~.-Sex - OTU70 - OTU55- OTU59 - OTU5 - OTU27 - OTU92 - OTU84 - OTU37 
+                          - OTU21- OTU50 - OTU0 - OTU66- OTU86 - OTU11 - OTU35 - OTU32 - OTU76 - OTU38
+                          - OTU46 - OTU65 - OTU53 - OTU93 - OTU49 - OTU52 - OTU89- OTU24- OTU44- OTU36
+                          - OTU1-OTU48 - OTU58 - OTU94 - OTU16 - OTU17 - OTU2 - OTU13 - OTU19 - OTU42
+                          - OTU51 - OTU64 - OTU56 - OTU91 - OTU45 - OTU61 - OTU62- OTU80 - OTU4, data = train, mtry=7, importance =TRUE )
+
+rf.biome3
+#No. of variables tried at each split: 7
+#OOB estimate of  error rate: 18.02%
+#Confusion matrix:
+#    0   1 class.error
+#0 240  23  0.08745247
+#1  57 124  0.31491713
+
+importance (rf.biome3)
+varImpPlot (rf.biome3)
+#decrease in MDA and MDG for most regressors
+
+#check against test set
+rf.p3 <- predict(rf.biome3,newdata=subset(test,select=c(2:98)),type='response')
+rf.p3
+table(rf.p3, test$Diet)
+#   0  1
+#0 81 20
+#1  6 42
+(6+20)/149
+# 17.45% misclassification rate - a bit worse than the two other models. 
+
+
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p3))
+rf.pr3 <- prediction(as.numeric(rf.p3), as.numeric(test$Diet))
+
+#rf.pr <- prediction(rf.p, test$Diet)
+rf.prf3 <- performance(rf.pr3, measure = "tpr", x.measure = "fpr")
+par(mfrow=c(2,2))
+plot(rf.prf3)
+
+rf.auc3 <- performance(rf.pr3, measure = "auc")
+rf.auc3 <- auc@y.values[[1]]
+rf.auc3 
+
+#---------------- Boosting 
 
 #set.seed(14)
 #boost.biome <- gbm(Diet~., data = train, distribution = 'huberized', n.trees = 5000, shrinkage = .01)
