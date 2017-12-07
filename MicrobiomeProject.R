@@ -688,9 +688,12 @@ rf.pr <- prediction(as.numeric(rf.p), as.numeric(test$Diet))
 rf.prf <- performance(rf.pr, measure = "tpr", x.measure = "fpr")
 plot(rf.prf)
 
-rf.auc <- performance(rf.pr, measure = "auc")
-rf.auc <- auc@y.values[[1]]
-rf.auc 
+rf.pred = predict(rf.biome,type="prob")[, 2]
+rf.roc = prediction(rf.pred, train$Diet)
+rf.auc <- as.numeric(performance(rf.roc , "auc")@y.values)
+rf.auc
+#0.836817
+
 
 #RF with variables with Mean Decrease Accuracy ~10 or higher, smaller number of predictors changed mtry to 3
 set.seed(102)
