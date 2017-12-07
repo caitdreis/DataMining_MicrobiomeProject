@@ -44,11 +44,11 @@ colnames(microbiome[1:5])
 #"Diet" "Source" "Donor" "CollectionMet" "Sex"  
 #Beyond this, all column names are OTU groups
 
-table(microbiome$Donor)
+table(microbiome$Donor) #Distribution of donor groups among the observations (see below for key)
 #0   1   2   3   4   5   6 
 #313  64   6 151  92  46   3 
 
-#   Donor	
+#Donor	
 # 0 - HMouseLFPP -- mice
 # 1 - CONVR
 # 2 - Human
@@ -57,28 +57,27 @@ table(microbiome$Donor)
 # 5 - HMouseWestern -- mice
 # 6 - CONVD
 
-#We will be using only non-human (mouse) donors for our analysis
+#We will be using only non-human (mouse) donors for our analysis...
 microbiome <- subset(microbiome, Donor == 0 | Donor == 3 | Donor == 4 | Donor == 5)
 
-nrow(microbiome) #602 observations
+nrow(microbiome) #602 observations left
 
-#Further explore the distribution of these variables
+#Further explore the distribution of variables in this set...
 table(microbiome$Diet)
 # 0   1   4 
 # 350 243 9 
 
-#   Diet	
+#Diet	
 #0	LFPP: low fat, high-plant polysaccharide diet
 #1	Western: high-fat, high-sugar Western diet
 #4	Suckling
 
-#Remove all rows with suckling diets (want to compare only high and low fat diets)
+#Remove all rows with suckling diets (want to compare only high and low fat diets)...
 microbiome <- subset(microbiome, Diet == 0 | Diet == 1)
 
 nrow(microbiome) #593 -- FINAL NUMBER OF ROWS
 
 #We will be using only Diet, Source, Sex, and OTU groups going forward
-
 microbiome <- microbiome[,c(1,2,5:100)]
 
 #Check for class types of each non-OTU column
@@ -94,9 +93,10 @@ microbiome[,3] <- as.factor(microbiome[,3])
 #Double check for correct conversion
 class((microbiome[,1])) #factor - good
 
+#Explore the distribution of sex among the observations...
 table(microbiome$Sex)
 #  0   1 
-# 543  50  -- Uneven distribution between males and females (see below for reference)
+# 543  50  -- Uneven distribution (see below for key)
 
 #Sex
 #0 - Male
@@ -109,6 +109,7 @@ plot(Diet~Sex, data=microbiome)
 #0	LFPP: low fat, high-plant polysaccharide diet
 #1	Western: high-fat, high-sugar Western diet
 
+#Repeat for source (again, refer to key below)
 table(microbiome$Source)
 #  0   1   2   3   4   5   6   7   8   9  10  11  12 
 # 13  13  15  10 444  10  12  12   9  13   9   7  26
@@ -132,7 +133,11 @@ plot(Diet~Source, data=microbiome)
 # 11 - Stomach
 # 12 - Cecum
 
+
 #----------------- Feature Engineering of Diversity Metrics ####
+
+#Please refer to our paper for an explanation of these new variables
+
 #Shannon Diversity Index
 microbiome$ShannonIndex <- NULL
 microbiome$ShannonIndex <- diversity(microbiome[,4:98])
@@ -268,11 +273,12 @@ set.seed(17)
 sample = sample(1:nrow(microbiome), nrow(microbiome) * .75)
 test <- microbiome[-sample, c(1:98)]
 train <- microbiome[sample, c(1:98)]
-test_div <- microbiome[-sample,] #includes diversity indices
-train_div <- microbiome[sample,] #includes diversity indices
+test_div <- microbiome[-sample,] #includes both diversity indices
+train_div <- microbiome[sample,] #includes both diversity indices
 
 microbiome_div <- microbiome
 microbiome <- microbiome[, c(1:98)]
+
 
 #----------------- Basic Multinomial Logistic Regression ######
 
@@ -409,7 +415,6 @@ plot(prf)
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7410085
-
 
 #----------------- Stepwise Multinomial Logistic Regression ######
 
@@ -561,6 +566,36 @@ plot(prf)
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7875417 -- Better!
+
+#----------------- Basic Logistic Regression + Diversity Indices ######
+
+#Create a model with all possible predictors
+model <- glm(Diet~.,family=binomial(link='logit'),data=train_div)
+summary(model) #Every variable is significant...
+
+#ANOVA 
+anova(model, test_div="Chisq") #See output -- neither diversity index appears to lower residual deviance
+
+pR2(model)
+# McFadden
+#-5.604885 (versus -5.484796 prior)  
+
+fitted.results <- predict(model,newdata=subset(test_div,select=c(2:100)),type='response')
+fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+misClasificError <- mean(fitted.results != test_div$Diet)
+print(paste('Accuracy',1-misClasificError))
+#Accuracy 0.751677852348993 - unchanged
+
+p <- predict(model,newdata=subset(test_div,select=c(2:100)),type='response')
+p
+pr <- prediction(p, test_div$Diet)
+prf <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc #0.7456433 - basically unchanged
 
 
 #----------------- Stepwise Model + Diversity Indices ######
