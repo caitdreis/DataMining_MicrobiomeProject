@@ -724,11 +724,11 @@ rf.prf <- performance(rf.pr, measure = "tpr", x.measure = "fpr")
 plot(rf.prf)
 
 #AUC
-rf.pred = predict(rf.biome,type="prob")[, 2]
-rf.roc = prediction(rf.pred, train$Diet)
-rf.auc <- as.numeric(performance(rf.roc , "auc")@y.values)
+#rf.pred = predict(rf.biome,type="prob")[, 2]
+#rf.roc = prediction(rf.pred, train$Diet)
+rf.auc <- as.numeric(performance(rf.pr, "auc")@y.values)
 rf.auc
-#0.836817
+#0.821561
 
 
 #RF with variables with Mean Decrease Accuracy ~10 or higher, smaller number of predictors changed mtry to 3
@@ -763,7 +763,7 @@ table(rf.p2, test$Diet)
 (9+15)/149
 # 16.107% Misclassification rate (minute improvement from full model)
 
-
+#coming as false for all the below, use as.numeric to get the right format
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p2))
 rf.pr2 <- prediction(as.numeric(rf.p2), as.numeric(test$Diet))
 
@@ -771,11 +771,11 @@ rf.pr2 <- prediction(as.numeric(rf.p2), as.numeric(test$Diet))
 rf.prf2 <- performance(rf.pr2, measure = "tpr", x.measure = "fpr")
 plot(rf.prf2)
 
-rf.pred2 = predict(rf.biome2,type="prob")[, 2]
-rf.roc2 = prediction(rf.pred2, train$Diet)
-rf.auc2 <- as.numeric(performance(rf.roc2 , "auc")@y.values)
+#rf.pred2 = predict(rf.biome2,type="prob")[, 2]
+#rf.roc2 = prediction(rf.pred2, train$Diet)
+rf.auc2 <- as.numeric(performance(rf.pr2 , "auc")@y.values)
 rf.auc2
-#0.8644413
+#0.8330552
 
 #RF model remvoving an regressors with less than 1 
 importance    <- importance(rf.biome)
@@ -807,6 +807,7 @@ importance (rf.biome3)
 varImpPlot (rf.biome3)
 #decrease in MDA and MDG for most regressors
 
+
 #check against test set
 rf.p3 <- predict(rf.biome3,newdata=subset(test,select=c(2:98)),type='response')
 rf.p3
@@ -827,11 +828,12 @@ par(mfrow=c(2,2))
 plot(rf.prf3)
 
 #AUC
-rf.pred3 = predict(rf.biome3,type="prob")[, 2]
-rf.roc3 = prediction(rf.pred3, train$Diet)
-rf.auc3 <- as.numeric(performance(rf.roc3 , "auc")@y.values)
+#rf.pred3 = predict(rf.biome3,type="prob")[, 2]
+#rf.roc3 = prediction(rf.pred3, test$Diet)
+rf.auc3 <- as.numeric(performance(rf.pr3, "auc")@y.values)
 rf.auc3
-#0.8802386
+#0.8042269
+
 
 #---------------- Boosting 
 
@@ -868,6 +870,11 @@ table(boost.p, test$Diet)
 (9+21)/149
 #20.13% misclassification rate
 
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boost.p))
+boost.pr <- prediction(as.numeric(boost.p), as.numeric(test$Diet))
+boost.auc <- as.numeric(performance(boost.pr , "auc")@y.values)
+boost.auc
+#0.7731739
 
 #----------------------- Second Boosting Model
 fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
@@ -921,3 +928,9 @@ table(fit.p, test$Diet)
 #1 15 38
 (15+24)/149
 #26.17 Misclassification rate
+
+sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(fit.p))
+fit.pr <- prediction(as.numeric(fit.p), as.numeric(test$Diet))
+fit.auc <- as.numeric(performance(fit.pr , "auc")@y.values)
+fit.auc
+#0.7306266
