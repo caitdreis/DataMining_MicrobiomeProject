@@ -37,4 +37,4 @@ AUC: 0.85
 Accuracy: 80%
 Bernoulli distributed boosted model with shrinkage tuning.
 Model Rank in Performance: 2
-
+ 
