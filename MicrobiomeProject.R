@@ -3,6 +3,7 @@
 #----------------- Set-up #####
 
 #----------------- Packages
+library(plyr)
 library(tidyverse) # Load the core tidyverse packages: ggplot2, tibble, 
 # tidyr, readr, purrr, and dplyr
 library(vegan) #calculation of diversity metrics
@@ -181,7 +182,7 @@ describeBy(microbiome$ShannonIndex, microbiome$Diet)
 #group: 0
 #   vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 350 1.26 1.47   0.69    1.03 0.62   0 4.43  4.43 1.44     0.53 0.08
-# --------------------------------------------------------------------------------------------- 
+
 #   group: 1
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 1.15 1.36   0.71    0.89 0.75   0 4.42  4.42 1.65     1.44 0.09
@@ -227,7 +228,7 @@ describeBy(microbiome$Renyi, microbiome$Diet)
 #group: 0
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 350 1.04 1.37   0.56     0.8 0.56   0 4.07  4.07 1.53     0.66 0.07
-# --------------------------------------------------------------------------------------------- 
+
 #group: 1
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 0.93 1.26   0.53    0.67 0.62   0 4.08  4.08 1.76     1.64 0.08
@@ -281,6 +282,8 @@ microbiome <- microbiome[, c(1:98)]
 
 
 #----------------- Youden's Index ######
+
+#This will be used to establish a cutoff/threshold for the logistic regression model predictions
 
 YoudensIndex <- function(X){   # Input to the function is the model
   # Split validation set into MMR gotten and not gotten observations
@@ -446,7 +449,7 @@ YoudensIndexDiv <- function(X){   # Input to the function is the model
 }
 
 
-#----------------- Basic Multinomial Logistic Regression ######
+#----------------- Basic Binomial Logistic Regression ######
 
 #NOTE: the first few logistic models were run WITHOUT the diversity indices
 
@@ -579,14 +582,14 @@ print(paste('Accuracy',1-misClasificError))
 p <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
 p
 pr <- prediction(p, test$Diet)
-prf <- performance(pr, measure = "tpr", x.measure = "fpr")
-plot(prf)
+prf1 <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf1)
 
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7410085
 
-#----------------- Stepwise Multinomial Logistic Regression ######
+#----------------- Stepwise Logistic Regression ######
 
 model.null = glm(Diet ~ 1, data=train, family = binomial(link="logit"))
 
@@ -635,17 +638,17 @@ summary(step.model)
 # OTU77        1.251e+03  3.376e+02   3.707 0.000210 ***
 # OTU9        -3.743e+03  7.977e+02  -4.692 2.70e-06 ***
 # OTU54        1.053e+10  8.131e+09   1.295 0.195317    
-# OTU71        5.974e+04  6.837e+06   0.009 0.993029    
+# OTU71        5.974e+04  6.837e+06   0.009 0.993029     -- note high p-value
 # OTU88        1.201e+04  2.835e+03   4.238 2.25e-05 ***
 # OTU25        4.876e+09  6.775e+09   0.720 0.471718    
 # OTU18        5.134e+10  1.018e+10   5.043 4.59e-07 ***
 # OTU74       -2.008e+10  8.236e+09  -2.438 0.014749 *  
 # OTU1        -3.064e+10  9.198e+09  -3.332 0.000863 ***
-# OTU10       -3.911e+04  1.047e+07  -0.004 0.997018    
-# OTU86        6.309e+08  7.754e+09   0.081 0.935153    
+# OTU10       -3.911e+04  1.047e+07  -0.004 0.997018     -- note high p-value    
+# OTU86        6.309e+08  7.754e+09   0.081 0.935153     -- note high p-value    
 # OTU85        6.257e+02  1.835e+02   3.409 0.000651 ***
 # OTU59        5.432e+03  2.140e+03   2.539 0.011126 *  
-# OTU35       -4.905e+04  5.146e+06  -0.010 0.992395    
+# OTU35       -4.905e+04  5.146e+06  -0.010 0.992395     -- note high p-value    
 # OTU89        1.798e+10  8.087e+09   2.223 0.026220 *  
 # OTU58       -3.050e+09  9.560e+08  -3.190 0.001423 ** 
 # OTU44        2.745e+10  8.604e+09   3.190 0.001423 ** 
@@ -669,7 +672,6 @@ summary(step.model)
 # OTU39        1.613e+10  8.523e+09   1.892 0.058495 .  
 # OTU43        2.304e+03  1.293e+03   1.782 0.074741 .  
 # OTU24       -1.221e+10  7.732e+09  -1.580 0.114185    
-
 
 #ANOVA 
 anova(step.model, test="Chisq")
@@ -734,12 +736,64 @@ print(paste('Accuracy',1-misClasificError))
 p <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
 p
 pr <- prediction(p, test$Diet)
-prf <- performance(pr, measure = "tpr", x.measure = "fpr")
-plot(prf)
+prf2 <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf2)
 
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7875417 -- Better!
+
+#----------------- Manually Edited Stepwise Model #####
+
+#Manually Selected Model (based off of summary from stepwise model) with 26 predictors
+#For this, I only selected variables with a p-value relatively close to 0.1 or below
+#I deleted each of the insignicant variables one by one to make sure each one's 
+#removal didn't significantly affect the p-values of the other variables being
+#considered for removal
+
+step.model.2 <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
+                    OTU88 + OTU18 + OTU74 + OTU1 + OTU70 +
+                    OTU85 + OTU59 + OTU89 + OTU58 + OTU44 +
+                    OTU80 + OTU73 + OTU7 + OTU26 + OTU31 +  
+                    OTU75 + OTU4 + OTU42 + OTU8 + OTU40 + OTU39, 
+                  family = binomial(link = "logit"), data = train)
+
+summary(step.model.2)
+
+pR2(step.model.2)
+#McFadden
+#0.5641426
+
+fitted.results <- predict(step.model.2,newdata=subset(test,select=c(2:98)),type='response')
+
+LogisticFunction <- YoudensIndex(step.model.2) #Use Youden's Index to select cutoff
+unique(LogisticFunction$`Youden's Index`) #0.46
+
+fitted.results <- ifelse(fitted.results > 0.46,1,0)
+
+misClasificError <- mean(fitted.results != test$Diet)
+print(paste('Accuracy',1-misClasificError))
+#Accuracy 0.785234899328859 - Unchanged
+
+p <- predict(step.model.2,newdata=subset(test,select=c(2:98)),type='response')
+p
+pr <- prediction(p, test$Diet)
+prf3 <- performance(pr, measure = "tpr", x.measure = "fpr")
+plot(prf3)
+
+auc <- performance(pr, measure = "auc")
+auc <- auc@y.values[[1]]
+auc #0.8201706 -- Better than automatic/original stepwise model
+
+#----------------- Comparing ROC Curves
+
+par(mfrow=c(1,3))
+plot(prf1)
+plot(prf2)
+plot(prf3)
+
+#Reset
+par(mfrow=c(1,1))
 
 #----------------- Basic Logistic Regression + Diversity Indices ######
 
@@ -1047,7 +1101,7 @@ varImp(boost.biome,numTrees = 50)
 
 par(mfrow=c(1,2))
 plot(boost.biome ,i="Source") #to plot against significant regressors
-plot(boost.biome ,i="OTU85")#
+plot(boost.biome ,i="OTU85")
 plot(boost.biome ,i="OTU41")
 plot(boost.biome ,i="OTU14")
 plot(boost.biome ,i="OTU53")
@@ -1057,19 +1111,38 @@ plot(boost.biome ,i="OTU75")
 #predict against test set
 boost.p=predict(boost.biome ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
 boost.p
-boost.p <- ifelse(boost.p > 0.5,1,0)
-table(boost.p, test$Diet)
+
+#With Boost, the Youden's Index function wasn't working well, so we used F1 to choose a threshold instead
+#F1 score
+my_reference <- as.factor(test$Diet) #Save response var as factor to be used in f1_score_func function
+f1_score_func <- function(threshold){ #Function inputs threshold and outputs threshold with f1 pairing as named vector
+  rounded_preds <- as.factor(as.integer(boost.p >= threshold)) #Round predictions according to threshold
+  my_F1 <- confusionMatrix(data = rounded_preds, reference = my_reference, mode = "prec_recall")[[4]][7] #Extract F1
+  attributes(my_F1) <- NULL #Remove attribute (name)
+  c("threshold" = threshold, "F1" = my_F1) #Return threshold and F1 pairing
+}
+f1_scores <- sapply(seq(from = 0.01, to = 0.5, by = 0.01), f1_score_func) #Create list of f1scores paired to thresholds
+f1_scores <- as_tibble(t(f1_scores)) #Convert to tibble
+plot(f1_scores$threshold, f1_scores$F1) #Inspect pattern. Appears to level off around threshold of .45
+
+
+boost.p2 <- ifelse(boost.p > 0.45,1,0)
+table(boost.p2, test$Diet)
 #   0  1
-#0 78 21
-#1  9 41
-(9+21)/149
-#20.13% misclassification rate
+#0 75 21
+#1 12 41
+(12+21)/149
+#22.15% misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boost.p))
 boost.pr <- prediction(as.numeric(boost.p), as.numeric(test$Diet))
 boost.auc <- as.numeric(performance(boost.pr , "auc")@y.values)
 boost.auc
-#0.7731739
+#0.8073786
+
+#ROC curve
+plot(performance(boost.pr, measure = "tpr", x.measure = "fpr"))
+#Looks okay
 
 #----------- Boosting model with smaller shrinkage number
 
@@ -1092,21 +1165,38 @@ plot(boost.biome ,i="OTU77")
 plot(boost.biome ,i="OTU82")
 
 #predict against test set
-boos2.p=predict(boost.biom2 ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
+boos2.p=predict(boost.biom2 ,newdata=subset(test,select=c(2:98)),n.trees=5000, type = 'response')
 boos2.p
-boos2.p <- ifelse(boos2.p > 0.5,1,0)
-table(boos2.p, test$Diet)
+
+#F1 score
+my_reference <- as.factor(test$Diet) #Save response var as factor to be used in f1_score_func function
+f1_score_func <- function(threshold){ #Function inputs threshold and outputs threshold with f1 pairing as named vector
+  rounded_preds <- as.factor(as.integer(boos2.p >= threshold)) #Round predictions according to threshold
+  my_F1 <- confusionMatrix(data = rounded_preds, reference = my_reference, mode = "prec_recall")[[4]][7] #Extract F1
+  attributes(my_F1) <- NULL #Remove attribute (name)
+  c("threshold" = threshold, "F1" = my_F1) #Return threshold and F1 pairing
+}
+f1_scores <- sapply(seq(from = 0.01, to = 0.5, by = 0.01), f1_score_func) #Create list of f1scores paired to thresholds
+f1_scores <- as_tibble(t(f1_scores)) #Convert to tibble
+plot(f1_scores$threshold, f1_scores$F1) #Inspect pattern. Appears to level off around threshold of .3
+
+boos2b.p <- ifelse(boos2.p > 0.3,1,0)
+table(boos2b.p, test$Diet)
 #   0  1
-# 79 20
-#  8 42
-(8+20)/149
-#18.79% misclassification rate
+# 67 10
+# 20 52
+(10+20)/149
+#20.13% misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boos2.p))
 boos2.pr <- prediction(as.numeric(boos2.p), as.numeric(test$Diet))
 boos2.auc <- as.numeric(performance(boos2.pr , "auc")@y.values)
 boos2.auc
-#0.7927327
+#0.8516871
+
+#ROC curve
+plot(performance(boos2.pr, measure = "tpr", x.measure = "fpr"))
+#This appears to be very good
 
 #----------------------- Next Boosting Model with cross validation
 fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
@@ -1115,9 +1205,9 @@ set.seed(108)
 fit <- train(Diet ~ ., data = train.boost, method = "gbm", trControl = fitControl, verbose = FALSE, tuneGrid = tune_Grid)
 
 fit
-#tochastic Gradient Boosting 
+#Stochastic Gradient Boosting 
 #444 samples
-#98 predictor
+#97 predictor
 #2 classes: '0', '1' 
 
 #No pre-processing
@@ -1125,44 +1215,39 @@ fit
 #Summary of sample sizes: 400, 399, 400, 399, 400, 399, ... 
 #Resampling results:
 #Accuracy   Kappa   
-#0.7636869  0.491104
+#0.7725033  0.5113699
 
 summary(fit)
 varImp(fit,numTrees = 50)
 #         Overall
 #OTU41   100.0000
-#Source4  50.9782
-#OTU9      8.2240
-#OTU77     6.3814
-#OTU85     5.8483
-#OTU6      5.7842
-#OTU54     1.4104
-#OTU66     1.0738
-#OTU74     0.8517
-#OTU73     0.8185
-#OTU19     0.0000
-#OTU49     0.0000
-#OTU13     0.0000
-#OTU36     0.0000
-#OTU78     0.0000
-#OTU71     0.0000
-#OTU80     0.0000
-#OTU61     0.0000
-#OTU88     0.0000
-#OTU81     0.0000
+# Source4  57.7576
+# OTU85     5.6704
+# OTU6      4.7223
+# OTU9      2.4721
+# OTU8      2.4475
+# OTU77     2.3635
+# OTU54     2.1988
+# OTU39     1.3119
+# All others = 0.0000
 
 #try against the test data
 fit.p= predict(fit ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'raw')
-fit.p
+fit.p #Notes, this output is all 1s and 0s, not probabilities
+
 table(fit.p, test$Diet)
 #   0  1
-#0 72 24
-#1 15 38
-(15+24)/149
-#26.17 Misclassification rate
+#0 73 23
+#1 14 39
+(15+23)/149
+#25.5% Misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(fit.p))
 fit.pr <- prediction(as.numeric(fit.p), as.numeric(test$Diet))
 fit.auc <- as.numeric(performance(fit.pr , "auc")@y.values)
 fit.auc
-#0.7306266
+#0.7340564
+
+#ROC curve
+plot(performance(fit.pr, measure = "tpr", x.measure = "fpr"))
+#Very similar to original "full model" binomial logistic regression
