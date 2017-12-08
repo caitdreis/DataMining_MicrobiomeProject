@@ -166,16 +166,19 @@ summary(microbiome$Renyi)
 # 0.0000  0.1216  0.5273  0.9932  0.9235  4.0790  
 
 #Is there a significant difference between these indexes?
-comp.index <- aov(microbiome$ShannonIndex ~ microbiome$Renyi, data=microbiome)
-plot(comp.index)
-summary(comp.index)
-#                 Df Sum Sq Mean Sq F value Pr(>F)    
-#microbiome$Renyi   1 1183.2    1183   37225 <2e-16 ***
-#Residuals        591   18.8       0  
-#the signifcant p-value tells us that there is a significant difference between the mean
-#Shannon Index and Renyi index.
+t.test(microbiome$ShannonIndex,microbiome$Renyi, paired=TRUE)
+#Paired t-test
+#data:  microbiome$ShannonIndex and microbiome$Renyi
+#t = 26.95, df = 592, p-value < 2.2e-16
+#alternative hypothesis: true difference in means is not equal to 0
+#95 percent confidence interval:
+#  0.2045279 0.2366812
+#sample estimates:
+#  mean of the differences 
+#         0.2206046 
+boxplot(microbiome$ShannonIndex, microbiome$Renyi) #visualize differences
 
-#----------------- Further Descriptive and ANOVA Exploration with Featured Variables 
+#----------------- Further Descriptive and T-Test Exploration with Featured Variables 
 #----------------- Shannon Index
 describeBy(microbiome$ShannonIndex, microbiome$Diet)
 #Descriptive statistics by group 
@@ -187,40 +190,29 @@ describeBy(microbiome$ShannonIndex, microbiome$Diet)
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 1.15 1.36   0.71    0.89 0.75   0 4.42  4.42 1.65     1.44 0.09
 
-#significance testing with ANOVA using diet
-fit <- aov(microbiome$ShannonIndex ~ microbiome$Diet, data=microbiome)
-plot(fit)
-summary(fit)
-#               Df Sum Sq Mean Sq F value Pr(>F)
-# microbiome$Diet   1    1.7   1.720   0.847  0.358
-# Residuals       591 1200.2   2.031  
-#No significance of diet on the Shannon Index
+#significance testing with t-test using diet
+t.test(microbiome$ShannonIndex ~ microbiome$Diet)
+#Welch Two Sample t-test
+#data:  microbiome$ShannonIndex by microbiome$Diet
+#t = 0.93389, df = 546.03, p-value = 0.3508
+#alternative hypothesis: true difference in means is not equal to 0
+#95 percent confidence interval:
+#  -0.1208395  0.3398778
+#sample estimates:
+#  mean in group 0 mean in group 1 
+#     1.258728        1.149208 
 
-#posthoc TukeyHSD (Honestly Significant Differences)
-TukeyHSD(fit) #where fit comes from aov()
-#Tukey multiple comparisons of means
-#95% family-wise confidence level
-#Fit: aov(formula = microbiome$ShannonIndex ~ microbiome$Diet, data = microbiome)
-#$`microbiome$Diet`
-#       diff        lwr       upr     p adj
-#1-0 -0.1095192 -0.3432244 0.1241861 0.3577576
-#Tukey's posthoc testing tells us that there is truly no significance in diet's
-#effect on the mean diversity index measure.
-
-#significance testing with ANOVA using sex
-fit.sex <- aov(microbiome$ShannonIndex ~ microbiome$Sex, data=microbiome)
-plot(fit.sex)
-summary(fit.sex)
-#               Df Sum Sq Mean Sq F value Pr(>F)
-#microbiome$Sex   1      0  0.0013   0.001   0.98
-#Residuals      591   1202  2.0338 
-
-#posthoc TukeyHSD 
-TukeyHSD(fit.sex) 
-#         diff        lwr       upr     p adj
-#1-0 0.005360838 -0.4085735 0.4192952 0.9797162
-#Tukey's posthoc testing tells us that there is no significance in sex's
-#effect on the mean diversity index measure.
+#significance testing with t-test using sex
+t.test(microbiome$ShannonIndex ~ microbiome$Sex)
+#Welch Two Sample t-test
+#data:  microbiome$ShannonIndex by microbiome$Sex
+#t = -0.023514, df = 56.726, p-value = 0.9813
+#alternative hypothesis: true difference in means is not equal to 0
+#95 percent confidence interval:
+#  -0.4619492  0.4512275
+#sample estimates:
+#  mean in group 0 mean in group 1 
+#     1.213397        1.218758 
 
 #----------------- Renyi Index
 describeBy(microbiome$Renyi, microbiome$Diet)
@@ -233,39 +225,29 @@ describeBy(microbiome$Renyi, microbiome$Diet)
 # vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 0.93 1.26   0.53    0.67 0.62   0 4.08  4.08 1.76     1.64 0.08
 
-#significance testing with ANOVA using diet
-fit.ren <- aov(microbiome$Renyi ~ microbiome$Diet, data=microbiome)
-plot(fit.ren)
-summary(fit.ren)
-#               Df Sum Sq Mean Sq F value Pr(>F)
-#microbiome$Diet   1    1.8   1.765   1.007  0.316
-# Residuals       591 1036.4   1.754    
-#No significant on the effect of diet on the Renyi diversity index
+#significance testing with t-test using diet
+t.test(microbiome$Renyi ~ microbiome$Diet)
+#Welch Two Sample t-test
+#data:  microbiome$Renyi by microbiome$Diet
+#t = 1.0175, df = 545.2, p-value = 0.3093
+#alternative hypothesis: true difference in means is not equal to 0
+#95 percent confidence interval:
+#  -0.1032278  0.3251110
+#sample estimates:
+#  mean in group 0 mean in group 1 
+#     1.0387059       0.9277644 
 
-#posthoc TukeyHSD (Honestly Significant Differences)
-TukeyHSD(fit.ren) #where fit comes from aov()
-#Tukey multiple comparisons of means
-#95% family-wise confidence level
-#Fit: aov(formula = microbiome$Renyi ~ microbiome$Diet, data = microbiome)
-#$`microbiome$Diet`
-#       diff        lwr       upr     p adj
-#1-0 -0.1109416 -0.3281099 0.1062267 0.3161206
-#Tukey's posthoc testing tells us that there is truly no significance in diet's
-#effect on the mean Renyi diversity index measure.
-
-#significance testing with ANOVA using sex
-fit.sex.ren <- aov(microbiome$Renyi ~ microbiome$Sex, data=microbiome)
-plot(fit.sex.ren)
-summary(fit.sex.ren)
-#               Df Sum Sq Mean Sq F value Pr(>F)
-#microbiome$Sex   1    0.1  0.0685   0.039  0.844
-# Residuals      591 1038.1  1.7565 
-
-#posthoc TukeyHSD 
-TukeyHSD(fit.sex.ren) 
-#         diff        lwr       upr     p adj
-#1-0 0.038679 -0.3460048 0.4233628 0.8435246
-
+#significance testing with t-tests using sex
+t.test(microbiome$Renyi ~ microbiome$Sex)
+#Welch Two Sample t-test
+#data:  microbiome$Renyi by microbiome$Sex
+#t = -0.18413, df = 56.894, p-value = 0.8546
+#alternative hypothesis: true difference in means is not equal to 0
+#95 percent confidence interval:
+#  -0.4593314  0.3819734
+#sample estimates:
+#  mean in group 0 mean in group 1 
+#     0.9899829       1.0286619 
 
 #----------------- Training and Testing Sets ######
 
