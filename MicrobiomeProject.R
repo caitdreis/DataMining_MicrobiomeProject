@@ -1,4 +1,7 @@
 #Microbiome Project
+#C. Dreisbach
+#J. Cruser
+#E. Homan
 
 #----------------- Set-up #####
 
@@ -15,14 +18,12 @@ library(caret)
 library(pscl) #For logistic regression R^2
 library(ROCR) #For ROC curves
 
-
 #----------------- Working Directory
 setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
 
 #----------------- Read in Data
 microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', stringsAsFactors = FALSE)
 #View(microbiome)
-
 
 #----------------- Data Exploration & Cleaning ####
 #This dataset was pre-curated from the original Science article
@@ -124,7 +125,6 @@ plot(Diet~Source, data=microbiome)
 # 11 - Stomach
 # 12 - Cecum
 
-
 #----------------- Feature Engineering of Diversity Metrics ####
 
 #Please refer to our paper for an explanation of these new variables
@@ -134,7 +134,7 @@ microbiome$ShannonIndex <- NULL
 microbiome$ShannonIndex <- diversity(microbiome[,4:98])
 summary(microbiome$ShannonIndex)
 #   Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#0.000001 0.348900 0.693300 1.214000 1.168000 4.433000
+#0.000001 0.348860 0.693277 1.213849 1.168294 4.432951 
 
 #Reyyi Index
 #specnumber fucntion finds the number of species in the sample
@@ -153,7 +153,7 @@ microbiome$Renyi <- NULL
 microbiome$Renyi <- renyi(microbiome[,4:98], scales = 32)
 summary(microbiome$Renyi)
 # Min.  1st Qu.   Median   Mean  3rd Qu.    Max. 
-# 0.0000  0.1216  0.5273  0.9932  0.9235  4.0790  
+# 0.0000  0.1216  0.5273  0.9932  0.9235  4.0791   
 
 #Is there a significant difference between these indexes?
 t.test(microbiome$ShannonIndex,microbiome$Renyi, paired=TRUE)
@@ -173,11 +173,11 @@ boxplot(microbiome$ShannonIndex, microbiome$Renyi) #visualize differences
 describeBy(microbiome$ShannonIndex, microbiome$Diet)
 #Descriptive statistics by group 
 #group: 0
-#   vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
-# X1    1 350 1.26 1.47   0.69    1.03 0.62   0 4.43  4.43 1.44     0.53 0.08
+#      vars n mean   sd median trimmed  mad min  max range skew kurtosis   se
+# X1    1  350 1.26 1.47   0.69    1.03 0.62   0 4.43  4.43 1.44     0.53 0.08
 
 #   group: 1
-# vars   n mean   sd median trimmed  mad min  max range skew kurtosis   se
+#     vars n mean   sd median trimmed  mad min  max range skew kurtosis   se
 # X1    1 243 1.15 1.36   0.71    0.89 0.75   0 4.42  4.42 1.65     1.44 0.09
 
 #significance testing with t-test using diet
@@ -251,7 +251,6 @@ train_div <- microbiome[sample,] #includes both diversity indices
 
 microbiome_div <- microbiome
 microbiome <- microbiome[, c(1:98)]
-
 
 #----------------- Youden's Index ######
 
@@ -337,7 +336,6 @@ YoudensIndex <- function(X){   # Input to the function is the model
   return(Results)
 }
 
-
 #----------------- Youden's Index for Testing Set with Diversity Indices ######
 
 YoudensIndexDiv <- function(X){   # Input to the function is the model
@@ -420,20 +418,15 @@ YoudensIndexDiv <- function(X){   # Input to the function is the model
   return(Results)
 }
 
-
 #----------------- Basic Binomial Logistic Regression ######
-
 #NOTE: the first few logistic models were run WITHOUT the diversity indices
-
 #Create a model with all possible predictors
 model <- glm(Diet~.,family=binomial(link='logit'),data=train)
 summary(model) #Every variable is significant...
-
 #ANOVA 
 anova(model, test="Chisq")
 #A large p-value here indicates that the model without the variable explains 
 #more or less the same amount of variation.
-
 # Df Deviance Resid. Df Resid. Dev  Pr(>Chi)    
 # NULL                     443      600.3              
 # Source 12     59.3       431      541.0 2.998e-08 ***
@@ -533,15 +526,11 @@ anova(model, test="Chisq")
 # OTU92   1    504.6       337     3243.9 < 2.2e-16 ***
 # OTU93   1      0.0       336     4181.1 1.0000000    
 # OTU94   1    288.3       335     3892.7 < 2.2e-16 ***
-
 #Many of the OTU groups do not help lower the deviance
-
 pR2(model)
 #      llh      llhNull           G2        McFadden      r2ML         r2CU 
 # -1946.357283  -300.141633 -3292.431301    -5.484796  -1660.350015 -2239.857196
-
 fitted.results <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
-
 LogisticFunction <- YoudensIndex(model)
 unique(LogisticFunction$`Youden's Index`) #0.01
 
@@ -698,25 +687,20 @@ fitted.results <- predict(step.model,newdata=subset(test,select=c(2:98)),type='r
 
 LogisticFunction <- YoudensIndex(step.model) #Use Youden's Index to select cutoff
 unique(LogisticFunction$`Youden's Index`) #0.83
-
 fitted.results <- ifelse(fitted.results > 0.83,1,0)
-
 misClasificError <- mean(fitted.results != test$Diet)
 print(paste('Accuracy',1-misClasificError))
 #Accuracy 0.785234899328859 - Better, compared to the model with all predictors
-
 p <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
 p
 pr <- prediction(p, test$Diet)
 prf2 <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf2)
-
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7875417 -- Better!
 
 #----------------- Manually Edited Stepwise Model #####
-
 #Manually Selected Model (based off of summary from stepwise model) with 26 predictors
 #For this, I only selected variables with a p-value relatively close to 0.1 or below
 #I deleted each of the insignicant variables one by one to make sure each one's 
@@ -724,11 +708,11 @@ auc #0.7875417 -- Better!
 #considered for removal
 
 step.model.2 <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
-                    OTU88 + OTU18 + OTU74 + OTU1 + OTU70 +
-                    OTU85 + OTU59 + OTU89 + OTU58 + OTU44 +
-                    OTU80 + OTU73 + OTU7 + OTU26 + OTU31 +  
-                    OTU75 + OTU4 + OTU42 + OTU8 + OTU40 + OTU39, 
-                  family = binomial(link = "logit"), data = train)
+                      OTU88 + OTU18 + OTU74 + OTU1 + OTU70 +
+                      OTU85 + OTU59 + OTU89 + OTU58 + OTU44 +
+                      OTU80 + OTU73 + OTU7 + OTU26 + OTU31 +  
+                      OTU75 + OTU4 + OTU42 + OTU8 + OTU40 + OTU39, 
+                    family = binomial(link = "logit"), data = train)
 
 summary(step.model.2)
 
@@ -740,48 +724,37 @@ fitted.results <- predict(step.model.2,newdata=subset(test,select=c(2:98)),type=
 
 LogisticFunction <- YoudensIndex(step.model.2) #Use Youden's Index to select cutoff
 unique(LogisticFunction$`Youden's Index`) #0.46
-
 fitted.results <- ifelse(fitted.results > 0.46,1,0)
-
 misClasificError <- mean(fitted.results != test$Diet)
 print(paste('Accuracy',1-misClasificError))
 #Accuracy 0.785234899328859 - Unchanged
-
 p <- predict(step.model.2,newdata=subset(test,select=c(2:98)),type='response')
 p
 pr <- prediction(p, test$Diet)
 prf3 <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf3)
-
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.8201706 -- Better than automatic/original stepwise model
 
 #----------------- Comparing ROC Curves
-
 par(mfrow=c(1,3))
 plot(prf1)
 plot(prf2)
 plot(prf3)
-
 #Reset
 par(mfrow=c(1,1))
 
 #----------------- Basic Logistic Regression + Diversity Indices ######
-
 #Create a model with all possible predictors
 model <- glm(Diet~.,family=binomial(link='logit'),data=train_div)
 summary(model) #Every variable is significant...
-
 #ANOVA 
 anova(model, test_div="Chisq") #See output -- neither diversity index appears to lower residual deviance
-
 pR2(model)
 # McFadden
 #-5.604885 (versus -5.484796 prior)  
-
 fitted.results <- predict(model,newdata=subset(test_div,select=c(2:100)),type='response')
-
 LogisticFunction <- YoudensIndexDiv(model)
 unique(LogisticFunction$`Youden's Index`) #0.01
 
@@ -801,7 +774,6 @@ auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7456433 - basically unchanged
 
-
 #----------------- Stepwise Model + Diversity Indices ######
 
 model <- glm(Diet~.,family=binomial(link='logit'),data=train_div)
@@ -819,11 +791,11 @@ step(model.null,
 
 #Same step model as before, but with the addition of ShannonIndex and Renyi predictor variables
 step.model.div <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
-                    OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
-                    OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
-                    OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
-                    OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
-                    OTU43 + OTU24+ShannonIndex+Renyi, family = binomial(link = "logit"), data = train_div)
+                        OTU71 + OTU88 + OTU25 + OTU18 + OTU74 + OTU1 + OTU10 + OTU86 +
+                        OTU85 + OTU59 + OTU35 + OTU89 + OTU58 + OTU44 + OTU51 + OTU22 +
+                        OTU80 + OTU73 + OTU87 + OTU7 + OTU26 + OTU31 + OTU75 + OTU4 +
+                        OTU42 + OTU83 + OTU0 + OTU8 + OTU40 + OTU70 + OTU30 + OTU39 +
+                        OTU43 + OTU24+ShannonIndex+Renyi, family = binomial(link = "logit"), data = train_div)
 
 summary(step.model.div) 
 #Neither diversity index appears to be significant in this model
@@ -839,9 +811,7 @@ fitted.results <- predict(step.model.div,newdata=subset(test_div,select=c(2:100)
 
 LogisticFunction <- YoudensIndexDiv(step.model)
 unique(LogisticFunction$`Youden's Index`) #0.83
-
 fitted.results <- ifelse(fitted.results > 0.5,1,0)
-
 misClasificError <- mean(fitted.results != test_div$Diet)
 print(paste('Accuracy',1-misClasificError))
 #Accuracy 0.74496644295302 - Unchanged from before
@@ -851,20 +821,17 @@ p
 pr <- prediction(p, test_div$Diet)
 prf <- performance(pr, measure = "tpr", x.measure = "fpr")
 plot(prf)
-
 auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.7886541 -- Within the range of error, so it is likely not worth including the extra predictors
 #Previous AUC of 0.7875417 
 
-
 #----------------- K-Nearest Neighbors (KNN) ######
-
 #Remove Diet column for KNN testing and training sets
 training <- train[,!colnames(train) %in% "Diet"]
 testing <- test[,!colnames(test) %in% "Diet"]
-
 set.seed(10)
+
 #create model with training data, test data, and training set classifier
 knn.pred1 <- knn(training, testing, train$Diet)
 knn.pred5 <- knn(training, testing, train$Diet, k=5)
@@ -926,20 +893,16 @@ plot(performance(knn10.pr, measure = "tpr", x.measure = "fpr"))
 #Similar, but the increase in TPR levels out even more quickly and at an 
 #even lower value (which is bad)
 
-
 #----------------- K-Means Clustering #####
 set.seed(11)
 diet.cluster <- kmeans(microbiome[,4:98],2)
-
 table(diet.cluster$cluster, microbiome$Diet)
 #      0   1
 # 1  349 239
 # 2    1   4
-
 #This does not look promising. Kmeans is likely not going to be helpful in creating an estimation model.
 
 #----------------- Random Forest ######
-
 # went by the rule of sqrt(p variables) when building a random forest of classification trees
 # sqrt(6701) = 81.86
 set.seed(100)
@@ -955,9 +918,8 @@ rf.biome
 importance (rf.biome)
 varImpPlot (rf.biome)
 # source is showing as the most significant, sex is showing little signficance
-#the OTUs 77, 85, 71,54, 41, 9 look very significant
+#the OTUs 77, 85, 71, 54, 41, 9 look very significant
 #Renyi looks more predictive than the ShannonIndex
-
 
 rf.p <- predict(rf.biome,newdata=subset(test,select=c(2:98)),type='response')
 rf.p
@@ -966,7 +928,7 @@ table(rf.p, test$Diet)
 #       0 77 15
 #       1 10 47
 25/149
-#16.78 % misclassification rate
+#0.1677852, 16.78 % misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p))
 rf.pr <- prediction(as.numeric(rf.p), as.numeric(test$Diet))
@@ -982,29 +944,28 @@ rf.auc <- as.numeric(performance(rf.pr, "auc")@y.values)
 rf.auc
 #0.821561
 
-
 #RF with variables with Mean Decrease Accuracy ~10 or higher, smaller number of predictors changed mtry to 3
 set.seed(102)
 rf.biome2 = randomForest(Diet~ OTU77+ OTU85 + OTU71 + OTU54 + OTU41 + OTU9 + Source, data=train, mtry=3, importance =TRUE)
 rf.biome2
 #Number of trees: 500, No. of variables tried at each split: 3
-#OOB estimate of  error rate: 16.22%
+#OOB estimate of  error rate: 16.89%
 #Confusion matrix:
-#    0   1 class.error
-#0 235  28   0.1064639
+#   0   1 class.error
+#0 232  31   0.1178707
 #1  44 137   0.2430939
 
 importance (rf.biome2)
 varImpPlot (rf.biome2)
 #Mean Decrease accuracy and Mean Decrease Gini went down across the board. 
 #            0         1           MeanDecreaseAccuracy MeanDecreaseGini
-#OTU77  12.594688 23.538983            23.954547         30.08362
-#OTU85   7.630045 19.021186            17.401198         26.73102
-#OTU71   7.566652  2.699498             7.485637         21.28655
-#OTU54   2.810747  6.697529             6.214892         19.83674
-#OTU41  42.446493 52.255283            60.191907         55.55406
-#OTU9    9.702282  9.090364            13.092183         22.52913
-#Source 30.358108 49.766697            51.591274         37.58660
+#OTU77  11.364713 22.973556            22.643884         30.51972
+#OTU85   7.404485 17.130156            16.367405         26.43931
+#OTU71   8.127386  5.810675             9.279576         21.32274
+#OTU54   3.281685  6.613934             6.365764         19.57385
+#OTU41  42.489010 50.101858            56.897988         56.26014
+#OTU9   11.945827  9.103383            14.412260         22.12122
+#Source 35.678675 48.800970            57.819742         37.74094
 
 rf.p2 <- predict(rf.biome2,newdata=subset(test,select=c(2:98)),type='response')
 rf.p2
@@ -1013,18 +974,14 @@ table(rf.p2, test$Diet)
 #0 79 15
 #1  8 47
 (8+15)/149
-# 15.44% Misclassification rate (small improvement from full model)
+# 0.1543624, 15.44% Misclassification rate (small improvement from full model)
 
 #coming as false for all the below, use as.numeric to get the right format
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p2))
 rf.pr2 <- prediction(as.numeric(rf.p2), as.numeric(test$Diet))
-
-#rf.pr <- prediction(rf.p, test$Diet)
 rf.prf2 <- performance(rf.pr2, measure = "tpr", x.measure = "fpr")
 plot(rf.prf2)
 
-#rf.pred2 = predict(rf.biome2,type="prob")[, 2]
-#rf.roc2 = prediction(rf.pred2, train$Diet)
 rf.auc2 <- as.numeric(performance(rf.pr2 , "auc")@y.values)
 rf.auc2
 #0.8330552
@@ -1059,7 +1016,6 @@ importance (rf.biome3)
 varImpPlot (rf.biome3)
 #decrease in MDA and MDG for most regressors
 
-
 #check against test set
 rf.p3 <- predict(rf.biome3,newdata=subset(test,select=c(2:98)),type='response')
 rf.p3
@@ -1068,8 +1024,7 @@ table(rf.p3, test$Diet)
 #0 81 20
 #1  6 42
 (6+20)/149
-# 17.45% misclassification rate - a bit worse than the two other models. 
-
+# 0.1744966, 17.45% misclassification rate - a bit worse than the two other models. 
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p3))
 rf.pr3 <- prediction(as.numeric(rf.p3), as.numeric(test$Diet))
@@ -1080,15 +1035,11 @@ par(mfrow=c(2,2))
 plot(rf.prf3)
 
 #AUC
-#rf.pred3 = predict(rf.biome3,type="prob")[, 2]
-#rf.roc3 = prediction(rf.pred3, test$Diet)
 rf.auc3 <- as.numeric(performance(rf.pr3, "auc")@y.values)
 rf.auc3
 #0.8042269
 
-
 #----------------- Boosting ######
-
 set.seed(14)
 #The bernoulli distribution only produced NAs - does not like the factor, so created a new train set with diet as a character
 train.boost <- train
@@ -1099,7 +1050,6 @@ boost.biome
 #5000 iterations were performed.
 #There were 97 predictors of which 0 had non-zero influence.
 summary(boost.biome)
-importance(boost.biome)
 varImp(boost.biome,numTrees = 50)
 
 par(mfrow=c(1,2))
@@ -1128,14 +1078,13 @@ f1_scores <- sapply(seq(from = 0.01, to = 0.5, by = 0.01), f1_score_func) #Creat
 f1_scores <- as_tibble(t(f1_scores)) #Convert to tibble
 plot(f1_scores$threshold, f1_scores$F1) #Inspect pattern. Appears to level off around threshold of .45
 
-
 boost.p2 <- ifelse(boost.p > 0.45,1,0)
 table(boost.p2, test$Diet)
 #   0  1
 #0 75 21
 #1 12 41
 (12+21)/149
-#22.15% misclassification rate
+#0.2214765, 22.15% misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boost.p))
 boost.pr <- prediction(as.numeric(boost.p), as.numeric(test$Diet))
@@ -1148,7 +1097,6 @@ plot(performance(boost.pr, measure = "tpr", x.measure = "fpr"))
 #Looks okay
 
 #----------- Boosting model with smaller shrinkage number
-
 set.seed(14)
 boost.biom2=gbm(Diet~.,data=train.boost, distribution="bernoulli",n.trees=5000, interaction.depth=5, shrinkage = 0.0005)
 
@@ -1185,11 +1133,11 @@ plot(f1_scores$threshold, f1_scores$F1) #Inspect pattern. Appears to level off a
 
 boos2b.p <- ifelse(boos2.p > 0.3,1,0)
 table(boos2b.p, test$Diet)
-#   0  1
-# 67 10
-# 20 52
+#boos2b.p  0  1
+#       0 67 10
+#       1 20 52
 (10+20)/149
-#20.13% misclassification rate
+#0.2013423, 20.13% misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(boos2.p))
 boos2.pr <- prediction(as.numeric(boos2.p), as.numeric(test$Diet))
@@ -1201,9 +1149,7 @@ boos2.auc
 plot(performance(boos2.pr, measure = "tpr", x.measure = "fpr"))
 #This appears to be very good
 
-#----------------------- Next Boosting Model with cross validation
-###
-
+#----------------------- Next Boosting Model with k-fold cross validation
 fitControl <- trainControl(method = "cv", number = 5 ) #5folds)
 tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 5000, shrinkage = 0.0005, n.minobsinnode = 10)
 set.seed(108)
@@ -1233,17 +1179,16 @@ varImp(fit,numTrees = 50)
 #OTU18     0.9101
 # All others  0.0000
 
-
 #try against the test data
 fit.p= predict(fit ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'raw')
 fit.p #Notes, this output is all 1s and 0s, not probabilities
 
 table(fit.p, test$Diet)
-#   0  1
-#0 81 26
-#1  6 36
+#fit.p  0  1
+#    0 80 24
+#    1  7 38
 (7+24)/149
-#20.8% Misclassification rate
+#0.2080537, 20.8% Misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(fit.p))
 fit.pr <- prediction(as.numeric(fit.p), as.numeric(test$Diet))
