@@ -1083,7 +1083,7 @@ rf.auc3
 #0.8042269
 
 
-#---------------- Boosting ######
+#----------------- Boosting ######
 
 set.seed(14)
 #The bernoulli distribution only produced NAs - does not like the factor, so created a new train set with diet as a character
