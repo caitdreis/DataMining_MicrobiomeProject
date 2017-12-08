@@ -48,13 +48,13 @@ Fewer predictors (OTU: 9, 41, 54, 71, 77, 85)
 Model Rank in Performance: 1
 
 
-# Boosted
+# Boosted 
 
 AUC: 0.85
 
 Accuracy: 80%
 
-Bernoulli distributed boosted model with shrinkage tuning.
+Bernoulli distributed boosted model with shrinkage tuning, previously attempted with 5-fold CV
 
 Model Rank in Performance: 2
  
