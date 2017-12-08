@@ -934,8 +934,7 @@ table(diet.cluster$cluster, microbiome$Diet)
 
 #This does not look promising. Kmeans is likely not going to be helpful in creating an estimation model.
 
-#----------------- Tree Based Methods ######
-#----------------- Random Forest
+#----------------- Random Forest ######
 
 # went by the rule of sqrt(p variables) when building a random forest of classification trees
 # sqrt(6701) = 81.86
@@ -1084,7 +1083,7 @@ rf.auc3
 #0.8042269
 
 
-#---------------- Boosting 
+#---------------- Boosting ######
 
 set.seed(14)
 #The bernoulli distribution only produced NAs - does not like the factor, so created a new train set with diet as a character
