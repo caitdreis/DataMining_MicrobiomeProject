@@ -23,16 +23,6 @@ setwd("~/Documents/GitHub/DataMining_MicrobiomeProject")
 microbiome <- read.csv("MicrobiomeWithMetadata.csv", encoding = 'utf-8', stringsAsFactors = FALSE)
 #View(microbiome)
 
-#----------------- Grading Criteria #####
-#Data exploration
-#Data cleaning (missing values, outliers, etc.)
-#Rationale for the selected statistical modeling methods
-#Correct implementation and use of statistical modeling methods
-#Appropriate model selection approach (train/test, cross-validation, etc.)
-#Thoroughly documented code (R comments)
-#Appropriate use of functions to reduce code complexity and redundancy
-#Writing quality for final report, evaluated in terms of conformance to process outline, level of 
-#detail, and correctness.
 
 #----------------- Data Exploration & Cleaning ####
 #This dataset was pre-curated from the original Science article
