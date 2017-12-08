@@ -280,6 +280,172 @@ microbiome_div <- microbiome
 microbiome <- microbiome[, c(1:98)]
 
 
+#----------------- Youden's Index ######
+
+YoudensIndex <- function(X){   # Input to the function is the model
+  # Split validation set into MMR gotten and not gotten observations
+  Test_LowFat <- test[which(test$Diet==0),]  
+  Test_HighFat <- test[which(test$Diet==1),] 
+  
+  # Initialize the data frame to store results in
+  Results <- as_data_frame(matrix(NA, ncol = 11))
+  names(Results) <- c("CutoffProb","TP","TN","FP","FN","Sensitivity",
+                      "Specificity","PPV","NPV","Accuracy","Youden's Index")
+  
+  # Initialize variables to store Youden's Index
+  YI <- 0
+  SSsum <- 0
+  
+  # Loop over various cutoff probabilities from 0.01 to 0.99
+  sequenceprobs <- seq(0.01,0.99,0.01)
+  for (i in sequenceprobs){
+    # Get the predictions from the model for No MMR group
+    probs <- as.vector(predict(X,newdata=Test_HighFat, type="response"))
+    
+    # Use cutoff to classify vaccination status
+    preds <- rep(0,nrow(Test_HighFat))  # Initialize prediction vector
+    preds[probs>i] <- 1
+    
+    # Add predictions to mortality group data frame
+    Positives <- cbind(Test_HighFat,preds)
+    
+    # Identify true positives and false negatives
+    TruePositives <- nrow(Positives[which(Positives$preds == 1),])
+    FalseNegatives <- nrow(Positives[which(Positives$preds == 0),])
+    
+    # Get the predictions from the model for MMR Received group
+    probs <- as.vector(predict(X,newdata=Test_LowFat, type="response"))
+    
+    # Use cutoff to classify mortality
+    preds <- rep(0,nrow(Test_LowFat))  # Initialize prediction vector
+    preds[probs>i] <- 1 
+    
+    # Add predictions to MMR received group data frame
+    Negatives <- cbind(Test_LowFat,preds)
+    
+    # Identify false positives and true negatives
+    FalsePositives <- nrow(Negatives[which(Negatives$preds == 1),])
+    TrueNegatives <- nrow(Negatives[which(Negatives$preds == 0),])
+    
+    # Generate statistics
+    Sensitivity <- TruePositives / (TruePositives + FalseNegatives)
+    Specificity <- TrueNegatives / (TrueNegatives + FalsePositives)
+    PPV <- TruePositives / (TruePositives + FalsePositives)
+    NPV <- TrueNegatives / (TrueNegatives + FalseNegatives)
+    Accuracy <- (TruePositives + TrueNegatives) / (TruePositives + TrueNegatives + FalsePositives + FalseNegatives)
+    
+    # Generate entry to append to the results dataframe
+    Entry <- as_data_frame(matrix(NA, nrow = 1, ncol = 11))
+    names(Entry) <- c("CutoffProb","TP","TN","FP","FN","Sensitivity",
+                      "Specificity","PPV","NPV","Accuracy","Youden's Index")
+    Entry[1,] <- c(i,TruePositives,TrueNegatives,FalsePositives,FalseNegatives,
+                   Sensitivity,Specificity,PPV,NPV,Accuracy,0)
+    
+    # Append to the dataframe
+    Results <- rbind(Results,Entry)
+    
+    # Update Youden's Index variables
+    candidate <- Sensitivity + Specificity - 1
+    if (candidate > SSsum){
+      YI <- i
+      SSsum <- candidate
+    }
+  }
+  
+  # Retrieve Youden's Index and put into dataframe
+  Results$`Youden's Index` <- YI
+  
+  # Drop the first row (which is all NAs)
+  Results <- Results[-1,]
+  
+  # Output the resulting dataframe
+  return(Results)
+}
+
+
+#----------------- Youden's Index for Testing Set with Diversity Indices ######
+
+YoudensIndexDiv <- function(X){   # Input to the function is the model
+  # Split validation set into MMR gotten and not gotten observations
+  Test_LowFat <- test_div[which(test_div$Diet==0),]  
+  Test_HighFat <- test_div[which(test_div$Diet==1),] 
+  
+  # Initialize the data frame to store results in
+  Results <- as_data_frame(matrix(NA, ncol = 11))
+  names(Results) <- c("CutoffProb","TP","TN","FP","FN","Sensitivity",
+                      "Specificity","PPV","NPV","Accuracy","Youden's Index")
+  
+  # Initialize variables to store Youden's Index
+  YI <- 0
+  SSsum <- 0
+  
+  # Loop over various cutoff probabilities from 0.01 to 0.99
+  sequenceprobs <- seq(0.01,0.99,0.01)
+  for (i in sequenceprobs){
+    # Get the predictions from the model for No MMR group
+    probs <- as.vector(predict(X,newdata=Test_HighFat, type="response"))
+    
+    # Use cutoff to classify vaccination status
+    preds <- rep(0,nrow(Test_HighFat))  # Initialize prediction vector
+    preds[probs>i] <- 1
+    
+    # Add predictions to mortality group data frame
+    Positives <- cbind(Test_HighFat,preds)
+    
+    # Identify true positives and false negatives
+    TruePositives <- nrow(Positives[which(Positives$preds == 1),])
+    FalseNegatives <- nrow(Positives[which(Positives$preds == 0),])
+    
+    # Get the predictions from the model for MMR Received group
+    probs <- as.vector(predict(X,newdata=Test_LowFat, type="response"))
+    
+    # Use cutoff to classify mortality
+    preds <- rep(0,nrow(Test_LowFat))  # Initialize prediction vector
+    preds[probs>i] <- 1 
+    
+    # Add predictions to MMR received group data frame
+    Negatives <- cbind(Test_LowFat,preds)
+    
+    # Identify false positives and true negatives
+    FalsePositives <- nrow(Negatives[which(Negatives$preds == 1),])
+    TrueNegatives <- nrow(Negatives[which(Negatives$preds == 0),])
+    
+    # Generate statistics
+    Sensitivity <- TruePositives / (TruePositives + FalseNegatives)
+    Specificity <- TrueNegatives / (TrueNegatives + FalsePositives)
+    PPV <- TruePositives / (TruePositives + FalsePositives)
+    NPV <- TrueNegatives / (TrueNegatives + FalseNegatives)
+    Accuracy <- (TruePositives + TrueNegatives) / (TruePositives + TrueNegatives + FalsePositives + FalseNegatives)
+    
+    # Generate entry to append to the results dataframe
+    Entry <- as_data_frame(matrix(NA, nrow = 1, ncol = 11))
+    names(Entry) <- c("CutoffProb","TP","TN","FP","FN","Sensitivity",
+                      "Specificity","PPV","NPV","Accuracy","Youden's Index")
+    Entry[1,] <- c(i,TruePositives,TrueNegatives,FalsePositives,FalseNegatives,
+                   Sensitivity,Specificity,PPV,NPV,Accuracy,0)
+    
+    # Append to the dataframe
+    Results <- rbind(Results,Entry)
+    
+    # Update Youden's Index variables
+    candidate <- Sensitivity + Specificity - 1
+    if (candidate > SSsum){
+      YI <- i
+      SSsum <- candidate
+    }
+  }
+  
+  # Retrieve Youden's Index and put into dataframe
+  Results$`Youden's Index` <- YI
+  
+  # Drop the first row (which is all NAs)
+  Results <- Results[-1,]
+  
+  # Output the resulting dataframe
+  return(Results)
+}
+
+
 #----------------- Basic Multinomial Logistic Regression ######
 
 #NOTE: the first few logistic models were run WITHOUT the diversity indices
@@ -400,7 +566,11 @@ pR2(model)
 # -1946.357283  -300.141633 -3292.431301    -5.484796  -1660.350015 -2239.857196
 
 fitted.results <- predict(model,newdata=subset(test,select=c(2:98)),type='response')
-fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+LogisticFunction <- YoudensIndex(model)
+unique(LogisticFunction$`Youden's Index`) #0.01
+
+fitted.results <- ifelse(fitted.results > 0.01,1,0)
 
 misClasificError <- mean(fitted.results != test$Diet)
 print(paste('Accuracy',1-misClasificError))
@@ -551,11 +721,15 @@ pR2(step.model)
 # -85.2486643 -300.1416326  429.7859366    0.7159719    0.6201528    0.836603
 
 fitted.results <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
-fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+LogisticFunction <- YoudensIndex(step.model) #Use Youden's Index to select cutoff
+unique(LogisticFunction$`Youden's Index`) #0.83
+
+fitted.results <- ifelse(fitted.results > 0.83,1,0)
 
 misClasificError <- mean(fitted.results != test$Diet)
 print(paste('Accuracy',1-misClasificError))
-#Accuracy 0.74496644295302 - Comparable to the model with all predictors
+#Accuracy 0.785234899328859 - Better, compared to the model with all predictors
 
 p <- predict(step.model,newdata=subset(test,select=c(2:98)),type='response')
 p
@@ -581,7 +755,11 @@ pR2(model)
 #-5.604885 (versus -5.484796 prior)  
 
 fitted.results <- predict(model,newdata=subset(test_div,select=c(2:100)),type='response')
-fitted.results <- ifelse(fitted.results > 0.5,1,0)
+
+LogisticFunction <- YoudensIndexDiv(model)
+unique(LogisticFunction$`Youden's Index`) #0.01
+
+fitted.results <- ifelse(fitted.results > 0.01,1,0)
 
 misClasificError <- mean(fitted.results != test_div$Diet)
 print(paste('Accuracy',1-misClasificError))
@@ -599,6 +777,19 @@ auc #0.7456433 - basically unchanged
 
 
 #----------------- Stepwise Model + Diversity Indices ######
+
+model <- glm(Diet~.,family=binomial(link='logit'),data=train_div)
+model.null = glm(Diet ~ 1, data=train_div, family = binomial(link="logit"))
+
+step(model.null,
+     scope = list(upper=model),
+     direction="both",
+     test="Chisq",
+     data=train)
+
+#This stepwise selection (for the training set with the diversity indices) does not select the
+#diversity variables. To be sure that these variables do not add anything to the model,
+#we ran the same stepwise model, but manually added the diversity indices...
 
 #Same step model as before, but with the addition of ShannonIndex and Renyi predictor variables
 step.model.div <- glm(formula = Diet ~ OTU41 + Source + OTU77 + OTU9 + OTU54 + 
@@ -619,6 +810,10 @@ pR2(step.model.div)
 #0.7159719
 
 fitted.results <- predict(step.model.div,newdata=subset(test_div,select=c(2:100)),type='response')
+
+LogisticFunction <- YoudensIndexDiv(step.model)
+unique(LogisticFunction$`Youden's Index`) #0.83
+
 fitted.results <- ifelse(fitted.results > 0.5,1,0)
 
 misClasificError <- mean(fitted.results != test_div$Diet)
@@ -683,7 +878,7 @@ table(diet.cluster$cluster, microbiome$Diet)
 # 1  349 239
 # 2    1   4
 
-#This does not look promising. Kmeans is likely not going to be helpful in creating a prediction model.
+#This does not look promising. Kmeans is likely not going to be helpful in creating an estimation model.
 
 #----------------- Tree Based Methods ######
 #----------------- Random Forest
