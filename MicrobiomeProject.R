@@ -737,7 +737,7 @@ auc <- performance(pr, measure = "auc")
 auc <- auc@y.values[[1]]
 auc #0.8201706 -- Better than automatic/original stepwise model
 
-#----------------- Comparing ROC Curves
+#----------------- Logistic Regression ROC Curves #####
 par(mfrow=c(1,3))
 plot(prf1)
 plot(prf2)
@@ -1031,7 +1031,6 @@ rf.pr3 <- prediction(as.numeric(rf.p3), as.numeric(test$Diet))
 
 #ROC
 rf.prf3 <- performance(rf.pr3, measure = "tpr", x.measure = "fpr")
-par(mfrow=c(2,2))
 plot(rf.prf3)
 
 #AUC
@@ -1162,22 +1161,22 @@ fit
 #97 predictor
 #2 classes: '0', '1' 
 
-#No pre-processing
-#Resampling: Cross-Validated (10 fold) 
-#Summary of sample sizes: 400, 399, 400, 399, 400, 399, ... 
-#Resampling results:
-#Accuracy   Kappa   
-# 0.7883299  0.5419818
+# No pre-processing
+# Resampling: Cross-Validated (5 fold) 
+# Summary of sample sizes: 356, 354, 355, 355, 356 
+# Resampling results:
+#   
+#   Accuracy   Kappa    
+# 0.7927358  0.5503065
 
 summary(fit)
 varImp(fit,numTrees = 50)
-#         Overall
-#OTU41   100.0000
-#Source4  52.6751
-#OTU85     2.0218
-#OTU6      1.8963
-#OTU77     1.0438
-#OTU18     0.9101
+#            Overall
+# OTU41     100.0000
+# Source4    54.8445
+# OTU77       2.3400
+# OTU6        0.7824
+# OTU74       0.7233
 # All others  0.0000
 
 #try against the test data
@@ -1199,4 +1198,11 @@ fit.auc
 
 #ROC curve
 plot(performance(fit.pr, measure = "tpr", x.measure = "fpr"))
-#Very similar to original "full model" binomial logistic regression
+#Again, a "curve" reflective of binary output
+
+#----------------- Boosting ROC Curves ######
+par(mfrow=c(1,3))
+plot(performance(boost.pr, measure = "tpr", x.measure = "fpr"))
+plot(performance(boos2.pr, measure = "tpr", x.measure = "fpr"))
+plot(performance(fit.pr, measure = "tpr", x.measure = "fpr"))
+
