@@ -16,7 +16,7 @@ Caitlin Dreisbach | Github owner, descriptive t-tests, KNN, background research 
 
 ## Comparison of Models and Evaluation Metrics
 
-Type of Model: Logistic Regression
+# Type of Model: Logistic Regression
 
 Best Evaluation Metrics: AUC: 0.82
 
@@ -26,7 +26,7 @@ Details on Best Model Manually selected variables, 26 predictors selected by p-v
 
 Model Rank in Performance: 3
 
-K-Nearest Neighbors
+# K-Nearest Neighbors
 
 AUC: 0.78
 
@@ -37,7 +37,7 @@ KNN with k=1 (noted to have the same accuracy as k=5)
 Model Rank in Performance: 4
 
 
-Random Forest
+# Random Forest
 
 AUC: 0.83
 
@@ -48,7 +48,7 @@ Fewer predictors (OTU: 9, 41, 54, 71, 77, 85)
 Model Rank in Performance: 1
 
 
-Boosted
+# Boosted
 
 AUC: 0.85
 
