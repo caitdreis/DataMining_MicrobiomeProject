@@ -1065,7 +1065,8 @@ plot(boost.biome ,i="OTU75")
 boost.p=predict(boost.biome ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'response')
 boost.p
 
-#With Boost, the Youden's Index function wasn't working well, so we used F1 to choose a threshold instead
+#With boosting, the Youden's Index function wasn't working well, so we used F1 to choose a threshold instead
+
 #F1 score
 my_reference <- as.factor(test$Diet) #Save response var as factor to be used in f1_score_func function
 f1_score_func <- function(threshold){ #Function inputs threshold and outputs threshold with f1 pairing as named vector
