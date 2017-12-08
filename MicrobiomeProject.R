@@ -1213,7 +1213,7 @@ plot(performance(boos2.pr, measure = "tpr", x.measure = "fpr"))
 
 #----------------------- Next Boosting Model with cross validation
 fitControl <- trainControl(method = "cv", number = 10 ) #5folds)
-tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 2500, shrinkage = 0.01, n.minobsinnode = 10)
+tune_Grid <-  expand.grid(interaction.depth = 2, n.trees = 2500, shrinkage = 0.0005, n.minobsinnode = 10)
 set.seed(108)
 fit <- train(Diet ~ ., data = train.boost, method = "gbm", trControl = fitControl, verbose = FALSE, tuneGrid = tune_Grid)
 
@@ -1228,21 +1228,31 @@ fit
 #Summary of sample sizes: 400, 399, 400, 399, 400, 399, ... 
 #Resampling results:
 #Accuracy   Kappa   
-#0.7725033  0.5113699
+#0.7860606  0.5275303
 
 summary(fit)
 varImp(fit,numTrees = 50)
 #         Overall
 #OTU41   100.0000
-# Source4  57.7576
-# OTU85     5.6704
-# OTU6      4.7223
-# OTU9      2.4721
-# OTU8      2.4475
-# OTU77     2.3635
-# OTU54     2.1988
-# OTU39     1.3119
-# All others = 0.0000
+#Source4  55.3591
+#OTU77     1.8675
+#OTU6      1.2117
+#OTU54     0.8009
+#OTU0      0.0000
+#Source9   0.0000
+#OTU40     0.0000
+#OTU17     0.0000
+#OTU18     0.0000
+#OTU24     0.0000
+#OTU87     0.0000
+#OTU56     0.0000
+#OTU44     0.0000
+#OTU74     0.0000
+#OTU13     0.0000
+#OTU79     0.0000
+#OTU9      0.0000
+#OTU86     0.0000
+#OTU8      0.0000
 
 #try against the test data
 fit.p= predict(fit ,newdata =subset(test,select=c(2:98)),n.trees=5000, type = 'raw')
@@ -1250,16 +1260,16 @@ fit.p #Notes, this output is all 1s and 0s, not probabilities
 
 table(fit.p, test$Diet)
 #   0  1
-#0 73 23
-#1 14 39
-(15+23)/149
-#25.5% Misclassification rate
+#0 81 26
+#1  6 36
+(6+26)/149
+#21.5% Misclassification rate
 
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(fit.p))
 fit.pr <- prediction(as.numeric(fit.p), as.numeric(test$Diet))
 fit.auc <- as.numeric(performance(fit.pr , "auc")@y.values)
 fit.auc
-#0.7340564
+#0.7558398
 
 #ROC curve
 plot(performance(fit.pr, measure = "tpr", x.measure = "fpr"))
