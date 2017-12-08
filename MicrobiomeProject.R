@@ -940,8 +940,8 @@ knn5.auc
 
 #ROC curve k=5
 plot(performance(knn5.pr, measure = "tpr", x.measure = "fpr"))
-#Again, very similar, though perhaps better in regards to overall shape and the 
-#"hugging" of the curve to the upper left corner
+#Again, very similar, but the increase in TPR levels out more quickly 
+#and at a slightly lower value
 
 #AUC k=10
 knn10.pr <- prediction(as.numeric(knn.pred10), as.numeric(test$Diet))
@@ -951,7 +951,8 @@ knn10.auc
 
 #ROC curve k=10
 plot(performance(knn10.pr, measure = "tpr", x.measure = "fpr"))
-#Similar, but the increase in TPR levels out more quickly and at a lower value (which is bad)
+#Similar, but the increase in TPR levels out even more quickly and at an 
+#even lower value (which is bad)
 
 
 #----------------- K-Means Clustering #####
@@ -1037,10 +1038,10 @@ rf.p2 <- predict(rf.biome2,newdata=subset(test,select=c(2:98)),type='response')
 rf.p2
 table(rf.p2, test$Diet)
 #  0  1
-#0 78 15
-#1  9 47
-(9+15)/149
-# 16.107% Misclassification rate (minute improvement from full model)
+#0 79 15
+#1  8 47
+(8+15)/149
+# 15.44% Misclassification rate (small improvement from full model)
 
 #coming as false for all the below, use as.numeric to get the right format
 sapply(c(is.vector, is.matrix, is.list, is.data.frame), do.call, list(rf.p2))
