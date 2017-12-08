@@ -922,6 +922,37 @@ pred.mat10 <- table("Predictions" = knn.pred10, Actual = test$Diet); pred.mat10
 (accuracy <- sum(diag(pred.mat5))/nrow(test) * 100) #79.19463%
 (accuracy <- sum(diag(pred.mat10))/nrow(test) * 100) #77.18121%
 
+#AUC k=1
+knn.pr <- prediction(as.numeric(knn.pred1), as.numeric(test$Diet))
+knn.auc <- as.numeric(performance(knn.pr , "auc")@y.values)
+knn.auc
+#0.7801261
+
+#ROC curve k=1
+plot(performance(knn.pr, measure = "tpr", x.measure = "fpr"))
+#Similar shape to original "full model" binomial logistic regression
+
+#AUC k=5
+knn5.pr <- prediction(as.numeric(knn.pred5), as.numeric(test$Diet))
+knn5.auc <- as.numeric(performance(knn5.pr , "auc")@y.values)
+knn5.auc
+#0.7731739
+
+#ROC curve k=5
+plot(performance(knn5.pr, measure = "tpr", x.measure = "fpr"))
+#Again, very similar, though perhaps better in regards to overall shape and the 
+#"hugging" of the curve to the upper left corner
+
+#AUC k=10
+knn10.pr <- prediction(as.numeric(knn.pred10), as.numeric(test$Diet))
+knn10.auc <- as.numeric(performance(knn10.pr , "auc")@y.values)
+knn10.auc
+#0.7443456
+
+#ROC curve k=10
+plot(performance(knn10.pr, measure = "tpr", x.measure = "fpr"))
+#Similar, but the increase in TPR levels out more quickly and at a lower value (which is bad)
+
 
 #----------------- K-Means Clustering #####
 set.seed(11)
