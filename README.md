@@ -8,11 +8,11 @@ Caitlin Dreisbach | cnd2y@virginia.edu
 
 ## Delegation of Project Tasks
 
-Elizabeth Homan | Logistic regression, ROC evaluation metrics, data preprocessing, writing approach and analysis.
+Elizabeth Homan | Logistic regression, ROC curves/evaluation metrics, data preprocessing, approach, and analysis.
 
-Jennifer Cruser | Random Forest, boosted models, contribution to writing analysis and interpretation.
+Jennifer Cruser | Random Forest, boosted models, analysis, and interpretation.
 
-Caitlin Dreisbach | Github owner, descriptive t-tests, KNN, background research and OTU interpreation.
+Caitlin Dreisbach | Github owner, descriptive t-tests, KNN, background research, and OTU interpretation.
 
 ## Comparison of Models and Evaluation Metrics
 
