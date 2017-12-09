@@ -1,4 +1,4 @@
-# DataMining_MicrobiomeProject
+# sys6018-final-project
 
 ## Team Members
 
